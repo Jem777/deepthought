@@ -46,6 +46,7 @@ reservedOp  = P.reservedOp lexer
 braces      = P.braces lexer
 squares     = P.squares lexer
 commaSep    = P.commaSep lexer
+stringLiteral = P.stringLiteral lexer
 modSep x    = sepBy1 x (reservedOp moduleOp) 
 lowerId = do
     x <- lower 

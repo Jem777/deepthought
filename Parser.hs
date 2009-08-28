@@ -6,12 +6,7 @@ module Parser (parseAll)
 --
 import Text.ParserCombinators.Parsec
 import Lexer 
-
-
-data BinaryTree a
-    = Leaf a
-    | Branch (BinaryTree a) a (BinaryTree a)
-    deriving (Show)
+import Types 
 
 parseAll = parse everything
 
