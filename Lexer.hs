@@ -35,12 +35,16 @@ languageDef
 lexer = P.makeTokenParser languageDef
 
 whiteSpace  = P.whiteSpace lexer
+lexeme      = P.lexeme lexer
+symbol      = P.symbol lexer
+natural     = P.natural lexer
 parens      = P.parens lexer
-braces      = P.braces lexer
-squares     = P.squares lexer
+semi        = P.semi lexer
 identifier  = P.identifier lexer
 reserved    = P.reserved lexer
 reservedOp  = P.reservedOp lexer
+braces      = P.braces lexer
+squares     = P.squares lexer
 commaSep    = P.commaSep lexer
 modSep x    = sepBy1 x (reservedOp moduleOp) 
 lowerId = do
