@@ -36,9 +36,10 @@ parseExport = do
     (reserved "export")
     squares (commaSep funcId)
 
+parseFun :: GenParser Char st ([Char], [Argument], [Char])
 parseFun = do
     ident <- funcId
-    args <- parens (commaSep varId)
+    args <- parens (commaSep value)
     reservedOp "->"
     body <- parseStatement
     return (ident, args, body)

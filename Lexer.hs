@@ -12,7 +12,7 @@ languageDef
     , P.commentEnd     = "-}"
     , P.commentLine    = "--"
     , P.nestedComments = True
-    , P.identStart     = alphaNum <|> char '_'
+    , P.identStart     = lower
     , P.identLetter    = alphaNum <|> char '_'
     , P.opStart        = oneOf ":!#$%&*+./<=>?@\\^|-~"              
     , P.opLetter       = oneOf ":!#$%&*+./<=>?@\\^|-~"    
@@ -51,21 +51,18 @@ charLiteral = P.charLiteral lexer
 integer     = P.integer lexer
 float       = P.float lexer
 modSep x    = sepBy1 x (reservedOp moduleOp) 
-lowerId = do
-    x <- lower 
-    xs <- P.identifier lexer
-    return (x:xs)
 
+lowerId = P.identifier lexer
 upperId = do
     x <- upper 
-    xs <- P.identifier lexer
+    xs <- many (lexeme (alphaNum <|> char '_'))
     return (x:xs)
 
 
 funcId = lowerId <?> "a function"
 moduleId = upperId <?> "a module"
 varId = upperId <?> "a variable"
-atomId = lowerId <?> "a atom"
+atomId = lowerId <?> "an atom"
 moduleOp = "::"
 
 concatWith [] sep  =  []

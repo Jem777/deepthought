@@ -8,29 +8,37 @@ import Text.ParserCombinators.Parsec
 import Lexer
 
 data Datatype = Atom String
-            | List [Datatype]
+            | List [Argument]
+            | Tupel [Argument]
             | Number Integer
             | Double Double
             | String String
             | Char Char
             deriving (Show)
 
+data Argument = Type Datatype
+            | Variable [Char]
+            deriving (Show)
+
+data Lambda = Lambda [Argument] Datatype
+
 data BinaryTree a
     = Leaf a
     | Branch (BinaryTree a) a (BinaryTree a)
     deriving (Show)
 
-parseType :: CharParser st Datatype
-parseType =
+getArgs (Lambda x _) = x
+
+parseDatatype :: CharParser st Datatype
+parseDatatype =
         parseAtom
     <|> parseString
+    <|> parseNumber
+    <|> parseDouble
+    <|> parseChar
+    <|> parseTupel
     <|> parseList
     <?> "a datatype"
-
-parseOneType f =
-        (f parseAtom)
-    <|> (f parseString)
-    <|> (f parseList)
 
 parseAtom :: CharParser st Datatype
 parseAtom = atomId >>= return . Atom
@@ -48,4 +56,18 @@ parseChar :: CharParser st Datatype
 parseChar = charLiteral >>= return . Char
 
 parseList :: CharParser st Datatype
-parseList = squares (parseOneType commaSep) >>= return . List
+parseList = squares (commaSep value) >>= return . List
+
+parseTupel :: CharParser st Datatype
+parseTupel = parens (commaSep value) >>= return . Tupel
+
+parseVar :: CharParser st Argument
+parseVar = varId >>= return . Variable
+
+parseType :: CharParser st Argument
+parseType = parseDatatype >>= return . Type
+
+parseLambda = parseType
+
+value :: CharParser st Argument
+value = parseVar <|> parseType
