@@ -47,6 +47,9 @@ braces      = P.braces lexer
 squares     = P.squares lexer
 commaSep    = P.commaSep lexer
 stringLiteral = P.stringLiteral lexer
+charLiteral = P.charLiteral lexer
+integer     = P.integer lexer
+float       = P.float lexer
 modSep x    = sepBy1 x (reservedOp moduleOp) 
 lowerId = do
     x <- lower 
@@ -58,11 +61,11 @@ upperId = do
     xs <- P.identifier lexer
     return (x:xs)
 
-value = (P.stringLiteral lexer) {-- <|> (try (P.float lexer)) --}<?> "a value"
 
-funcId = lowerId
-moduleId = upperId
-varId = lowerId
+funcId = lowerId <?> "a function"
+moduleId = upperId <?> "a module"
+varId = upperId <?> "a variable"
+atomId = lowerId <?> "a atom"
 moduleOp = "::"
 
 concatWith [] sep  =  []
