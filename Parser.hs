@@ -44,5 +44,20 @@ parseFun = do
     body <- parseStatement
     return (ident, args, body)
 
+lambda = do
+    reservedOp "\\"
+    args <- commaSep var
+    reservedOp "->"
+    body <- parseStatement
+    return (args, body)
+
+bind = do
+    variable <- var
+    reserveredOp "="
+    binded <- parseStatement
+    reservedOp ";"
+    rest <- parseStatement
+    return (variable, binded, rest)
+
 parseStatement = varId <|> funcId
 

@@ -46,6 +46,7 @@ reservedOp  = P.reservedOp lexer
 braces      = P.braces lexer
 squares     = P.squares lexer
 commaSep    = P.commaSep lexer
+commaSep1   = P.commaSep1 lexer
 stringLiteral = P.stringLiteral lexer
 charLiteral = P.charLiteral lexer
 integer     = P.integer lexer

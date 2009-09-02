@@ -8,66 +8,64 @@ import Text.ParserCombinators.Parsec
 import Lexer
 
 data Datatype = Atom String
-            | List [Argument]
-            | Tupel [Argument]
+            | List [Statement]
+            | Tupel [Statement]
             | Number Integer
             | Double Double
             | String String
             | Char Char
             deriving (Show)
 
-data Argument = Type Datatype
+data Statement = Bind [Char] Statement Statement
+            | Type Datatype
             | Variable [Char]
+            | Application [Argument] Statement
+            | Function [Char] [Statement]
+            | Lambda [Argument] Statement
             deriving (Show)
-
-data Lambda = Lambda [Argument] Datatype
 
 data BinaryTree a
     = Leaf a
     | Branch (BinaryTree a) a (BinaryTree a)
     deriving (Show)
 
-getArgs (Lambda x _) = x
-
 parseDatatype :: CharParser st Datatype
 parseDatatype =
-        parseAtom
-    <|> parseString
-    <|> parseNumber
-    <|> parseDouble
-    <|> parseChar
-    <|> parseTupel
-    <|> parseList
+        atom
+    <|> number
+    <|> double
+    <|> charTok
+    <|> stringTok
+    <|> tupel
+    <|> list
     <?> "a datatype"
 
-parseAtom :: CharParser st Datatype
-parseAtom = atomId >>= return . Atom
+atom :: CharParser st Datatype
+atom = atomId >>= return . Atom
 
-parseString :: CharParser st Datatype
-parseString = stringLiteral >>= return . String 
+stringTok :: CharParser st Datatype
+stringTok = stringLiteral >>= return . String 
 
-parseNumber :: CharParser st Datatype
-parseNumber = integer >>= return . Number
+number :: CharParser st Datatype
+number = integer >>= return . Number
 
-parseDouble :: CharParser st Datatype
-parseDouble = float >>= return . Double
+double :: CharParser st Datatype
+double = float >>= return . Double
 
-parseChar :: CharParser st Datatype
-parseChar = charLiteral >>= return . Char
+charTok :: CharParser st Datatype
+charTok = charLiteral >>= return . Char
 
-parseList :: CharParser st Datatype
-parseList = squares (commaSep value) >>= return . List
+list :: CharParser st Datatype
+list = squares (commaSep value) >>= return . List
 
-parseTupel :: CharParser st Datatype
-parseTupel = parens (commaSep value) >>= return . Tupel
+tupel :: CharParser st Datatype
+tupel = parens (commaSep value) >>= return . Tupel
 
-parseVar :: CharParser st Argument
-parseVar = varId >>= return . Variable
+var :: CharParser st Statement
+var = varId >>= return . Variable
 
-parseType :: CharParser st Argument
-parseType = parseDatatype >>= return . Type
+datatype :: CharParser st Statement
+datatype = parseDatatype >>= return . Type
 
-parseLambda = parseType
-
-value :: CharParser st Argument
-value = parseVar <|> parseType
+value :: CharParser st Statement
+value = var <|> datatype
