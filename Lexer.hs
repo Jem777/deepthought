@@ -56,7 +56,8 @@ modSep x    = sepBy1 x (reservedOp moduleOp)
 lowerId = P.identifier lexer
 upperId = do
     x <- upper 
-    xs <- many (lexeme (alphaNum <|> char '_'))
+    xs <- many (alphaNum <|> char '_')
+    whiteSpace
     return (x:xs)
 
 

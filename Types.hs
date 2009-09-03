@@ -19,9 +19,9 @@ data Datatype = Atom String
 data Statement = Bind [Char] Statement Statement
             | Type Datatype
             | Variable [Char]
-            | Application [Argument] Statement
+            | Application Statement Statement
             | Function [Char] [Statement]
-            | Lambda [Argument] Statement
+            | Lambda [[Char]] Statement
             deriving (Show)
 
 data BinaryTree a
@@ -40,6 +40,33 @@ parseDatatype =
     <|> list
     <?> "a datatype"
 
+parseStatement = 
+    try bind
+    <|> try callable
+    <|> try value 
+    <|> try lambda
+    
+
+lambda = do
+    reservedOp "\\"
+    args <- commaSep varId
+    reservedOp "->"
+    body <- parseStatement
+    return (Lambda args body)
+
+bind = do
+    variable <- varId
+    reservedOp "="
+    binded <- parseStatement
+    reservedOp ";"
+    rest <- parseStatement
+    return (Bind variable binded rest)
+
+callable = do
+    func <- try (parens parseStatement) <|> value
+    args <- try (parens parseStatement) <|> value
+    return (Application func args)
+
 atom :: CharParser st Datatype
 atom = atomId >>= return . Atom
 
@@ -56,10 +83,10 @@ charTok :: CharParser st Datatype
 charTok = charLiteral >>= return . Char
 
 list :: CharParser st Datatype
-list = squares (commaSep value) >>= return . List
+list = squares (commaSep parseStatement) >>= return . List
 
 tupel :: CharParser st Datatype
-tupel = parens (commaSep value) >>= return . Tupel
+tupel = parens (commaSep parseStatement) >>= return . Tupel
 
 var :: CharParser st Statement
 var = varId >>= return . Variable
@@ -69,3 +96,4 @@ datatype = parseDatatype >>= return . Type
 
 value :: CharParser st Statement
 value = var <|> datatype
+
