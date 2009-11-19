@@ -45,3 +45,22 @@ parseFun = do
     return (ident, args, body)
 
 
+declaration = do
+    left <- function
+    reservedOp "->"
+    right <- many1 expression
+    return (left, right)
+
+function = 
+    try ( do 
+        ident <- funcId
+        args <- many pattern
+        return (ident, args))
+    <|> ( do
+        arg <- pattern
+        ident <- operator
+        args <- many1 pattern
+        return (ident, (arg:args)))
+
+pattern = var
+expression = parseStatement

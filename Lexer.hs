@@ -16,7 +16,7 @@ languageDef
     , P.identLetter    = alphaNum <|> char '_'
     , P.opStart        = oneOf ":!#$%&*+./<=>?@\\^|-~"              
     , P.opLetter       = oneOf ":!#$%&*+./<=>?@\\^|-~"    
-    , P.reservedOpNames= ["::","..","=","\\","|"
+    , P.reservedOpNames= ["::","..","=","\\",":"
                        ,"<-","->","@","~","=>"
                        ]
     , P.reservedNames  = ["let","in","case","of"
@@ -40,7 +40,9 @@ symbol      = P.symbol lexer
 natural     = P.natural lexer
 parens      = P.parens lexer
 semi        = P.semi lexer
+semiSep     = P.semiSep lexer
 identifier  = P.identifier lexer
+operator    = P.operator lexer
 reserved    = P.reserved lexer
 reservedOp  = P.reservedOp lexer
 braces      = P.braces lexer
