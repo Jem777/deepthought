@@ -12,7 +12,7 @@ parseAll = parse everything ""
 
 everything = do
     header <- parseHeader
-    funs <- many parseFun
+    funs <- many declaration
     return (header, funs)
 
 parseHeader = do 
@@ -36,15 +36,6 @@ parseExport = do
     (reserved "export")
     squares (commaSep funcId)
 
-parseFun :: GenParser Char st ([Char], [Statement], Statement)
-parseFun = do
-    ident <- funcId
-    args <- parens (commaSep value)
-    reservedOp "->"
-    body <- parseStatement
-    return (ident, args, body)
-
-
 declaration = do
     left <- function
     reservedOp "->"
@@ -62,5 +53,5 @@ function =
         args <- many1 pattern
         return (ident, (arg:args)))
 
-pattern = var
-expression = parseStatement
+pattern = integer
+expression = integer

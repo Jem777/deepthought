@@ -7,68 +7,41 @@ module Types
 import Text.ParserCombinators.Parsec
 import Lexer
 
-data Datatype = Atom String
-            | List [Statement]
-            | Tupel [Statement]
+data Datatype = List [Expression]
+            | ListComp Pattern [Expression]
+            | Tupel [Expression]
             | Number Integer
-            | Double Double
+            | Float Double
             | String String
             | Char Char
             deriving (Show)
 
-data Statement = Bind [Char] Statement Statement
+data Pattern = Var [Char]
+            | ListConst Pattern Pattern
             | Type Datatype
-            | Variable [Char]
-            | Application Statement Statement
-            | Function [Char] [Statement]
-            | Lambda [[Char]] Statement
+            | Wildcard
             deriving (Show)
 
-data BinaryTree a
-    = Leaf a
-    | Branch (BinaryTree a) a (BinaryTree a)
-    deriving (Show)
+data Expression = Variable [Char]
+            | Application Declaration [Expression]
+            | Datatype Datatype
+            deriving (Show)
+
+data Declaration = Function String [Pattern] Expression
+            | Name String
+            | Lambda [Pattern] Expression
+            deriving (Show)
 
 parseDatatype :: CharParser st Datatype
 parseDatatype =
-        atom
-    <|> number
+        number
     <|> double
     <|> charTok
     <|> stringTok
-    <|> tupel
-    <|> list
+{-    <|> tupel
+    <|> list-}
     <?> "a datatype"
 
-parseStatement = 
-    try bind
-    <|> try callable
-    <|> try value 
-    <|> try lambda
-    
-
-lambda = do
-    reservedOp "\\"
-    args <- commaSep varId
-    reservedOp "->"
-    body <- parseStatement
-    return (Lambda args body)
-
-bind = do
-    variable <- varId
-    reservedOp "="
-    binded <- parseStatement
-    reservedOp ";"
-    rest <- parseStatement
-    return (Bind variable binded rest)
-
-callable = do
-    func <- try (parens parseStatement) <|> value
-    args <- try (parens parseStatement) <|> value
-    return (Application func args)
-
-atom :: CharParser st Datatype
-atom = atomId >>= return . Atom
 
 stringTok :: CharParser st Datatype
 stringTok = stringLiteral >>= return . String 
@@ -77,23 +50,14 @@ number :: CharParser st Datatype
 number = integer >>= return . Number
 
 double :: CharParser st Datatype
-double = float >>= return . Double
+double = float >>= return . Float
 
 charTok :: CharParser st Datatype
 charTok = charLiteral >>= return . Char
 
-list :: CharParser st Datatype
-list = squares (commaSep parseStatement) >>= return . List
+--list :: CharParser st Datatype
+--list = squares (commaSep parseStatement) >>= return . List
 
-tupel :: CharParser st Datatype
-tupel = parens (commaSep parseStatement) >>= return . Tupel
-
-var :: CharParser st Statement
-var = varId >>= return . Variable
-
-datatype :: CharParser st Statement
-datatype = parseDatatype >>= return . Type
-
-value :: CharParser st Statement
-value = var <|> datatype
+--tupel :: CharParser st Datatype
+--tupel = parens (commaSep parseStatement) >>= return . Tupel
 

@@ -53,7 +53,6 @@ stringLiteral = P.stringLiteral lexer
 charLiteral = P.charLiteral lexer
 integer     = P.integer lexer
 float       = P.float lexer
-modSep x    = sepBy1 x (reservedOp moduleOp) 
 
 lowerId = P.identifier lexer
 upperId = do
@@ -62,12 +61,18 @@ upperId = do
     whiteSpace
     return (x:xs)
 
+wildcard = do
+    char '_'
+    many alphaNum
+    whiteSpace
+    return '_'
 
 funcId = lowerId <?> "a function"
 moduleId = upperId <?> "a module"
 varId = upperId <?> "a variable"
 atomId = lowerId <?> "an atom"
 moduleOp = "::"
+modSep x    = sepBy1 x (reservedOp moduleOp) 
 
 concatWith [] sep  =  []
 concatWith ws sep  =  foldr1 (\w s -> w ++ sep ++ s) ws
