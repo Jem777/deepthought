@@ -8,13 +8,14 @@ import Text.ParserCombinators.Parsec
 import Lexer
 
 data Datatype = List [Expression]
-            | ListComp Expression [Expression] -- first one is a pattern
+            -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
             | Tupel [Expression]
             | Number Integer
             | Float Double
             | String String
             | Char Char
-            | Function String
+            | Atom String
+            | Operator String
             | Lambda [Expression] Expression --first one is a pattern
             deriving (Show)
 
@@ -28,9 +29,11 @@ datatype :: CharParser st Datatype
 datatype =
         number
     <|> double
+    <|> atom
     <|> charTok
     <|> stringTok
-    <?> "a datatype"
+    <|> lambda
+    <?> "a datatype" 
 
 pattern :: CharParser st Expression
 pattern = 
@@ -44,15 +47,24 @@ pattern =
 
 listconstructor = 
     colonSep pattern >>= 
-    return . (Application (Datatype (Function ":")))
+    return . (Application (Datatype (Operator ":")))
 
+{-listcomprehension = 
+    squares (
+            do 
+            patr <- pattern
+            reservedOp "|"
+            compr <- (commaSep1 expression)
+            return (ListComp patr compr)
+            )
+-}
 expression = 
-        try infixOp
+        try infixOp 
     <|> try application
     <|> expr
 
 expr = 
-        parens (expression)
+        parens expression
     <|> (datatype >>= return . Datatype) 
     <|> (list expression >>= return . Datatype)
     <|> (tupel expression >>= return . Datatype)
@@ -60,7 +72,7 @@ expr =
     <?> "an expression"
 
 application = do
-    fun <- expr <|> func
+    fun <- expr 
     arg <- (many1 expr)
     return (Application fun arg)
 
@@ -68,7 +80,7 @@ infixOp = do
     first <- expr
     op <- operator
     last <- expression
-    return (Application (Datatype (Function op)) [first, last])
+    return (Application (Datatype (Operator op)) [first, last])
 
 lambda = do 
     reservedOp "\\"
@@ -77,8 +89,8 @@ lambda = do
     expression <- expression
     return (Lambda vars expression)
 
-func :: CharParser st Expression
-func = funcId >>= return . Datatype . Function
+atom :: CharParser st Datatype
+atom = funcId >>= return . Atom
 
 stringTok :: CharParser st Datatype
 stringTok = stringLiteral >>= return . String 

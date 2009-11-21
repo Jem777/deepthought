@@ -7,8 +7,14 @@ module Parser (parseAll)
 import Text.ParserCombinators.Parsec
 import Lexer 
 import Types 
+import ShowXml
 
 parseAll = parse everything ""
+
+printXML = output . (parse expression "") 
+    where 
+        output (Left a) = show a
+        output (Right tree) = showxml tree
 
 everything = do
     header <- parseHeader
