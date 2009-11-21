@@ -47,6 +47,7 @@ reserved    = P.reserved lexer
 reservedOp  = P.reservedOp lexer
 braces      = P.braces lexer
 squares     = P.squares lexer
+colon       = P.colon lexer
 commaSep    = P.commaSep lexer
 commaSep1   = P.commaSep1 lexer
 stringLiteral = P.stringLiteral lexer
@@ -67,6 +68,7 @@ moduleId = upperId <?> "module"
 varId = upperId <?> "variable"
 moduleOp = "::"
 modSep x    = sepBy1 x (reservedOp moduleOp) 
+colonSep p  = sepBy p colon
 
 concatWith [] sep  =  []
 concatWith ws sep  =  foldr1 (\w s -> w ++ sep ++ s) ws

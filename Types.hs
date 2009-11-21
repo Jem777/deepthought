@@ -34,7 +34,7 @@ datatype =
 
 pattern :: CharParser st Expression
 pattern = 
-        parens (listconstructor)
+        (parens listconstructor)
     <|> (datatype >>= return . Datatype) 
     <|> (varId >>= return . Variable)
     <|> (wildcard >> return Wildcard)
@@ -42,15 +42,13 @@ pattern =
     <|> (tupel pattern >>= return . Datatype)
     <?> "a pattern"
 
-listconstructor = do
-    first <- pattern
-    reservedOp ":"
-    last <- pattern
-    return (Application (Datatype (Function ":")) [first, last])
+listconstructor = 
+    colonSep pattern >>= 
+    return . (Application (Datatype (Function ":")))
 
 expression = 
-    try application
-    <|> try infixOp
+        try infixOp
+    <|> try application
     <|> expr
 
 expr = 
@@ -69,8 +67,8 @@ application = do
 infixOp = do
     first <- expr
     op <- operator
-    last <- (many1 expr)
-    return (Application (Datatype (Function op)) (first : last))
+    last <- expression
+    return (Application (Datatype (Function op)) [first, last])
 
 lambda = do 
     reservedOp "\\"
