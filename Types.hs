@@ -8,50 +8,54 @@ import Text.ParserCombinators.Parsec
 import Lexer
 
 data Datatype = List [Expression]
-            | ListComp Pattern [Expression]
+            | ListComp Expression [Expression] -- first one is a pattern
             | Tupel [Expression]
             | Number Integer
             | Float Double
             | String String
             | Char Char
             | Function String
-            | Lambda [Pattern] Expression
-            deriving (Show)
-
-data Pattern = Var [Char]
-            | ListConst Pattern Pattern
-            | Type Datatype
-            | Wildcard
+            | Lambda [Expression] Expression --first one is a pattern
             deriving (Show)
 
 data Expression = Variable [Char]
             | Application Expression [Expression]
             | Datatype Datatype
+            | Wildcard
             deriving (Show)
 
-parseDatatype :: CharParser st Datatype
-parseDatatype =
+datatype :: CharParser st Datatype
+datatype =
         number
     <|> double
     <|> charTok
     <|> stringTok
-{-    <|> tupel
-    <|> list-}
     <?> "a datatype"
 
-pattern :: CharParser st Pattern
+pattern :: CharParser st Expression
 pattern = 
-        (parseDatatype >>= return . Type) 
-    <|> (varId >>= return . Var)
+        parens (listconstructor)
+    <|> (datatype >>= return . Datatype) 
+    <|> (varId >>= return . Variable)
     <|> (wildcard >> return Wildcard)
+    <|> (list pattern >>= return . Datatype)
+    <|> (tupel pattern >>= return . Datatype)
+    <?> "a pattern"
+
+listconstructor = do
+    first <- pattern
+    reservedOp ":"
+    last <- pattern
+    return (Application (Datatype (Function ":")) [first, last])
 
 expression = 
     try application
+    <|> try infixOp
     <|> expr
 
 expr = 
         parens (expression)
-    <|> (parseDatatype >>= return . Datatype) 
+    <|> (datatype >>= return . Datatype) 
     <|> (list expression >>= return . Datatype)
     <|> (tupel expression >>= return . Datatype)
     <|> (varId >>= return . Variable)
@@ -61,6 +65,12 @@ application = do
     fun <- expr <|> func
     arg <- (many1 expr)
     return (Application fun arg)
+
+infixOp = do
+    first <- expr
+    op <- operator
+    last <- (many1 expr)
+    return (Application (Datatype (Function op)) (first : last))
 
 lambda = do 
     reservedOp "\\"

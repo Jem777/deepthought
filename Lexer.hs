@@ -16,8 +16,8 @@ languageDef
     , P.identLetter    = alphaNum <|> char '_'
     , P.opStart        = oneOf ":!#$%&*+./<=>?@\\^|-~"              
     , P.opLetter       = oneOf ":!#$%&*+./<=>?@\\^|-~"    
-    , P.reservedOpNames= ["::","..","=","\\",":"
-                       ,"<-","->","@","~","=>"
+    , P.reservedOpNames= ["::","..","=","\\","|"
+                       ,"<-","->","@","~",">>"
                        ]
     , P.reservedNames  = ["let","in","case","of"
                        ,"if","then","else"
