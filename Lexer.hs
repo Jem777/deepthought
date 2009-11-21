@@ -61,16 +61,10 @@ upperId = do
     whiteSpace
     return (x:xs)
 
-wildcard = do
-    char '_'
-    many alphaNum
-    whiteSpace
-    return '_'
-
-funcId = lowerId <?> "a function"
-moduleId = upperId <?> "a module"
-varId = upperId <?> "a variable"
-atomId = lowerId <?> "an atom"
+wildcard = symbol "_" <?> "wildcard"
+funcId = lowerId <?> "function"
+moduleId = upperId <?> "module"
+varId = upperId <?> "variable"
 moduleOp = "::"
 modSep x    = sepBy1 x (reservedOp moduleOp) 
 

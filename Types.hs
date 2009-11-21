@@ -14,6 +14,8 @@ data Datatype = List [Expression]
             | Float Double
             | String String
             | Char Char
+            | Function String
+            | Lambda [Pattern] Expression
             deriving (Show)
 
 data Pattern = Var [Char]
@@ -23,13 +25,8 @@ data Pattern = Var [Char]
             deriving (Show)
 
 data Expression = Variable [Char]
-            | Application Declaration [Expression]
+            | Application Expression [Expression]
             | Datatype Datatype
-            deriving (Show)
-
-data Declaration = Function String [Pattern] Expression
-            | Name String
-            | Lambda [Pattern] Expression
             deriving (Show)
 
 parseDatatype :: CharParser st Datatype
@@ -42,6 +39,38 @@ parseDatatype =
     <|> list-}
     <?> "a datatype"
 
+pattern :: CharParser st Pattern
+pattern = 
+        (parseDatatype >>= return . Type) 
+    <|> (varId >>= return . Var)
+    <|> (wildcard >> return Wildcard)
+
+expression = 
+    try application
+    <|> expr
+
+expr = 
+        parens (expression)
+    <|> (parseDatatype >>= return . Datatype) 
+    <|> (list expression >>= return . Datatype)
+    <|> (tupel expression >>= return . Datatype)
+    <|> (varId >>= return . Variable)
+    <?> "an expression"
+
+application = do
+    fun <- expr <|> func
+    arg <- (many1 expr)
+    return (Application fun arg)
+
+lambda = do 
+    reservedOp "\\"
+    vars <- (many1 (try pattern))
+    reservedOp "->"
+    expression <- expression
+    return (Lambda vars expression)
+
+func :: CharParser st Expression
+func = funcId >>= return . Datatype . Function
 
 stringTok :: CharParser st Datatype
 stringTok = stringLiteral >>= return . String 
@@ -55,9 +84,7 @@ double = float >>= return . Float
 charTok :: CharParser st Datatype
 charTok = charLiteral >>= return . Char
 
---list :: CharParser st Datatype
---list = squares (commaSep parseStatement) >>= return . List
+list x = squares (commaSep x) >>= return . List
 
---tupel :: CharParser st Datatype
---tupel = parens (commaSep parseStatement) >>= return . Tupel
+tupel x = parens (commaSep x) >>= return . Tupel
 

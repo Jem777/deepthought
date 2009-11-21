@@ -53,5 +53,3 @@ function =
         args <- many1 pattern
         return (ident, (arg:args)))
 
-pattern = integer
-expression = integer
