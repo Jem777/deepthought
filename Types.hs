@@ -4,8 +4,10 @@ module Types
 --
 -- datatypes and some functions to parse and output them
 --
-import Text.ParserCombinators.Parsec
+
 import Lexer
+import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec.Expr
 
 data Datatype = List [Expression]
             -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
@@ -25,11 +27,27 @@ data Expression = Variable [Char]
             | Wildcard
             deriving (Show)
 
+
+table :: OperatorTable Char st Expression
+table   = [ [postfix "++"]
+        , [binary "*" AssocLeft, binary "/" AssocLeft ]
+        , [binary "+" AssocLeft, binary "-" AssocLeft ]
+        ]
+
+op_to_expr :: String -> [Expression] -> Expression
+op_to_expr x = Application (Datatype (Operator x)) 
+--op_to_expr x 2 = (\y z -> Application (Operator x) [y,z])
+
+binary  name assoc = Infix (do{ reservedOp name; return (\x y -> op_to_expr name [x,y])}) assoc
+prefix  name       = Prefix (do{ reservedOp name; return (\y -> op_to_expr name [y]) })
+postfix name       = Postfix (do{ reservedOp name; return (\y -> op_to_expr name [y]) })
+
+
 datatype :: CharParser st Datatype
 datatype =
         number
     <|> double
-    <|> atom
+--    <|> atom
     <|> charTok
     <|> stringTok
     <|> lambda
@@ -59,8 +77,9 @@ listconstructor =
             )
 -}
 expression = 
-        try infixOp 
+    try (buildExpressionParser table expr)
     <|> try application
+    <|> (atom >>= return . Datatype)
     <|> expr
 
 expr = 
@@ -72,15 +91,9 @@ expr =
     <?> "an expression"
 
 application = do
-    fun <- expr 
+    fun <- (try (atom >>= return . Datatype) <|> expr) 
     arg <- (many1 expr)
     return (Application fun arg)
-
-infixOp = do
-    first <- expr
-    op <- operator
-    last <- expression
-    return (Application (Datatype (Operator op)) [first, last])
 
 lambda = do 
     reservedOp "\\"

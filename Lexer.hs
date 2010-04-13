@@ -23,11 +23,12 @@ languageDef
                        ,"if","then","else"
                        ,"data","type"
                        ,"class","default","deriving"
-                       ,"module","import", "export"
                        ,"infix","infixl","infixr"
                        ,"instance","do"
                        ,"newtype","where"
-                       ,"primitive"
+                       ,"primitive", 
+                       "module","import", "export", 
+                       "true", "false", "none"
                        ]          
     , P.caseSensitive  = True                                   
     }

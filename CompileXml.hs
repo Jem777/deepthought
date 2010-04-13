@@ -1,6 +1,7 @@
-module ShowXml 
+module CompileXml 
     where
 
+import Parser
 import Types
 
 class ShowXml a where
