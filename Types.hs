@@ -29,14 +29,15 @@ data Expression = Variable [Char]
 
 
 table :: OperatorTable Char st Expression
-table   = [ [postfix "++"]
-        , [binary "*" AssocLeft, binary "/" AssocLeft ]
-        , [binary "+" AssocLeft, binary "-" AssocLeft ]
+table   = [ 
+        [binary "**" AssocLeft],
+        [postfix "++"], 
+        [binary "*" AssocLeft, binary "/" AssocLeft, binary "%" AssocLeft], 
+        [binary "+" AssocLeft, binary "-" AssocLeft],
+        [binary "==" AssocLeft, binary "!=" AssocLeft, binary "<" AssocLeft, binary "<=" AssocLeft, binary ">" AssocLeft, binary ">=" AssocLeft],
+        [binary "&&" AssocLeft],
+        [binary "||" AssocLeft]
         ]
-
-op_to_expr :: String -> [Expression] -> Expression
-op_to_expr x = Application (Datatype (Operator x)) 
---op_to_expr x 2 = (\y z -> Application (Operator x) [y,z])
 
 binary  name assoc = Infix (do{ reservedOp name; return (\x y -> op_to_expr name [x,y])}) assoc
 prefix  name       = Prefix (do{ reservedOp name; return (\y -> op_to_expr name [y]) })
@@ -121,3 +122,11 @@ list x = squares (commaSep x) >>= return . List
 
 tupel x = parens (commaSep x) >>= return . Tupel
 
+op_to_expr :: String -> [Expression] -> Expression
+op_to_expr = Application . Datatype . op_to_atom
+
+op_to_atom :: String -> Datatype
+op_to_atom = Atom . convert
+    where
+    convert "+" = "add"
+    convert x = x
