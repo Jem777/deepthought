@@ -78,8 +78,8 @@ listconstructor =
             )
 -}
 expression = 
-    try (buildExpressionParser table expr)
-    <|> try application
+    try application
+    <|> try (buildExpressionParser table expr)
     <|> (atom >>= return . Datatype)
     <|> expr
 
@@ -98,7 +98,7 @@ application = do
 
 lambda = do 
     reservedOp "\\"
-    vars <- (many1 (try pattern))
+    vars <- (commaSep1 (try pattern))
     reservedOp "->"
     expression <- expression
     return (Lambda vars expression)
