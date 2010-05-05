@@ -3,7 +3,8 @@ module Lexer
 -- 
 -- the lexer for my new language
 --
-import Text.ParserCombinators.Parsec
+import ApplicativeParsec
+--import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 
 languageDef
@@ -57,12 +58,14 @@ integer     = P.integer lexer
 float       = P.float lexer
 
 lowerId = P.identifier lexer
-upperId = do
+upperId :: GenParser Char st [Char]
+upperId = (:) <$> upper <*> ((many $ alphaNum <|> char '_') <* whiteSpace)
+{-upperId = do
     x <- upper 
     xs <- many (alphaNum <|> char '_')
     whiteSpace
     return (x:xs)
-
+-}
 boolId = 
     ((reserved "true") >> return "true") 
     <|> ((reserved "false") >> return "false")

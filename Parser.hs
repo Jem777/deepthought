@@ -4,7 +4,8 @@ module Parser (parseAll)
 --
 -- a parser for my new language
 --
-import Text.ParserCombinators.Parsec
+--import Text.ParserCombinators.Parsec
+import ApplicativeParsec
 import Lexer 
 import Types 
 import Expr
@@ -19,23 +20,26 @@ everything = do
 parseHeader = do 
     whiteSpace 
     modulename <- parseModule
-    imports <- (many parseImport)
     exports <- (many1 parseExport)
-    return (modulename, imports, concat exports)
+    imports <- (many parseImport)
+    return (modulename, concat exports, imports)
 
 parseModule = do 
     (reserved "module")
     moduleId
 
-parseImport = do 
+parseImport = do --TODO: restructure this - it probably need a new type
     (reserved "import")
     mod <- modSep moduleId
     modname <- (option (concatWith mod moduleOp) (reserved "as" >> moduleId))
     return (mod, modname)
 
-parseExport = do 
+parseExport :: GenParser Char st [String]
+parseExport = reserved "export" >> squares (commaSep funcId)
+{-parseExport = do 
     (reserved "export")
     squares (commaSep funcId)
+-}
 
 declaration = do
     left <- function
