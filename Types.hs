@@ -17,7 +17,8 @@ data Datatype = List [Expression]
             | Char Char
             | Atom String
             | Operator String
-            | Lambda [Expression] Expression --first one is a pattern
+            | Lambda [Expression] Expression --[Expr] are the arguments, Expr is the Body
+            | Function String [Expression] Expression --first is the ident, second the args, third the body
             deriving (Show)
 
 data Expression = Variable [Char]
@@ -26,6 +27,8 @@ data Expression = Variable [Char]
             | Wildcard
             deriving (Show)
 
+data Tree = Tree String [String] [(String, String)] [Datatype] -- modname, exports, imports, functions
+            deriving (Show)
 -- some really trivial functions
 
 atom :: CharParser st Datatype

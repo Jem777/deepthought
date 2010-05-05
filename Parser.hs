@@ -47,8 +47,8 @@ declaration = do
     right <- many1 expression
     return (left, right)
 
-function = 
-    try ( do 
+{-function = 
+    ( do 
         ident <- funcId
         args <- many pattern
         return (ident, args))
@@ -57,4 +57,14 @@ function =
         ident <- operator
         args <- many1 pattern
         return (ident, (arg:args)))
+-}
 
+function = f <$> (funHead <|> opHead) <*> (reservedOp "->" *> expression)
+        where f a b = Function (fst a) (snd a) b
+
+funHead = (,) <$> funcId <*> many pattern
+opHead = do
+        arg <- pattern
+        ident <- operator
+        args <- many1 pattern
+        return (ident, (arg:args))
