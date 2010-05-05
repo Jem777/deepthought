@@ -7,7 +7,8 @@ module Expr
 
 import Lexer
 import Types
-import Text.ParserCombinators.Parsec
+import ApplicativeParsec
+--import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 
 
@@ -65,7 +66,7 @@ expression =
     <|> expr
 
 expr = 
-    parens expression
+    try (parens expression)
     <|> (primitive >>= return . Datatype) 
     <|> (list expression >>= return . Datatype)
     <|> (tupel expression >>= return . Datatype)
@@ -73,22 +74,26 @@ expr =
     <?> "expression"
 
 appHead = 
-    try (parens lambda >>= return . Datatype)
-    <|> try (atom >>= return . Datatype)
+    (parens lambda >>= return . Datatype)
+    <|> (atom >>= return . Datatype)
     <|> (varId >>= return . Variable)
 
-application = do
+application :: GenParser Char st Expression
+application = Application <$> appHead <*> (many1 expr)
+{-application = do
     fun <- appHead
     arg <- (many1 expr)
     return (Application fun arg)
-
-lambda = do 
+-}
+lambda :: CharParser st Datatype
+lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 pattern)) <*> ((reservedOp "->") *> expression)
+{-lambda = do 
     reservedOp "\\"
     vars <- (commaSep1 (try pattern))
     reservedOp "->"
     expression <- expression
     return (Lambda vars expression)
-
+-}
 -- internal functions
 
 op_to_expr :: String -> [Expression] -> Expression
