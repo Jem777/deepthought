@@ -7,6 +7,7 @@ module Parser (parseAll)
 import Text.ParserCombinators.Parsec
 import Lexer 
 import Types 
+import Expr
 
 parseAll = parse everything ""
 

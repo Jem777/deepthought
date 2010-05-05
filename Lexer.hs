@@ -63,6 +63,10 @@ upperId = do
     whiteSpace
     return (x:xs)
 
+boolId = 
+    ((reserved "true") >> return "true") 
+    <|> ((reserved "false") >> return "false")
+
 wildcard = symbol "_" <?> "wildcard"
 funcId = lowerId <?> "function"
 moduleId = upperId <?> "module"
