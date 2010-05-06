@@ -31,13 +31,6 @@ parseImport = do --TODO: restructure this - it probably need a new type
 parseExport :: GenParser Char st [String]
 parseExport = reserved "export" >> squares (commaSep funcId)
 
-declaration = do
-    left <- function
-    reservedOp "->"
-    right <- many1 expression
-    return (left, right)
-
-
 function = f <$> (funHead <|> opHead) <*> (reservedOp "->" *> expression)
         where f a b = Function (fst a) (snd a) b
 
