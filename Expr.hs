@@ -13,6 +13,7 @@ import Text.ParserCombinators.Parsec.Expr
 
 table :: OperatorTable Char st Expression
 table   = [ 
+        [binary ">>=" AssocLeft, binary ">>" AssocLeft],
         [binary "**" AssocLeft],
         [postfix "++"], 
         [binary "*" AssocLeft, binary "/" AssocLeft, binary "%" AssocLeft], 
