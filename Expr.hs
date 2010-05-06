@@ -13,14 +13,15 @@ import Text.ParserCombinators.Parsec.Expr
 
 table :: OperatorTable Char st Expression
 table   = [ 
-        [binary ">>=" AssocLeft, binary ">>" AssocLeft],
-        [binary "**" AssocLeft],
+        [binary "." AssocRight],
+        [binary "**" AssocRight, binary "^" AssocRight, binary "^^" AssocRight],
         [postfix "++"], 
         [binary "*" AssocLeft, binary "/" AssocLeft, binary "%" AssocLeft], 
         [binary "+" AssocLeft, binary "-" AssocLeft],
         [binary "==" AssocLeft, binary "!=" AssocLeft, binary "<" AssocLeft, binary "<=" AssocLeft, binary ">" AssocLeft, binary ">=" AssocLeft],
-        [binary "&&" AssocLeft],
-        [binary "||" AssocLeft]
+        [binary "&&" AssocRight],
+        [binary "||" AssocRight],
+        [binary ">>=" AssocLeft, binary ">>" AssocLeft]
         ]
 
 binary  name assoc = Infix (do{ reservedOp name; return (\x y -> op_to_expr name [x,y])}) assoc
@@ -59,10 +60,11 @@ listconstructor =
             return (ListComp patr compr)
             )
 -}
+expression :: GenParser Char st Expression
 expression = 
     try application
     <|> try (buildExpressionParser table expr)
-    <|> try (parens lambda >>= return . Datatype)
+    <|> try (parens lambda) 
     <|> expr
 
 expr = 
@@ -73,25 +75,30 @@ expr =
     <|> (varId >>= return . Variable)
     <?> "expression"
 
+appHead :: GenParser Char st Expression
 appHead = 
-    (parens lambda >>= return . Datatype)
+    try (parens lambda) 
     <|> (atom >>= return . Datatype)
+    <|> (prefixOp >>= return . Datatype . Operator)
     <|> (varId >>= return . Variable)
 
 application :: GenParser Char st Expression
 application = Application <$> appHead <*> (many1 expr)
 
-lambda :: CharParser st Datatype
+lambda :: CharParser st Expression
 lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 pattern)) <*> ((reservedOp "->") *> expression)
 
 -- internal functions
 
 op_to_expr :: String -> [Expression] -> Expression
-op_to_expr = Application . Datatype . op_to_atom
+op_to_expr = Application . Datatype . Operator
 
 op_to_atom :: String -> Datatype
 op_to_atom = Atom . convert
     where
     convert "+" = "add"
+    convert "-" = "sub"
+    convert "/" = "div"
+    convert "%" = "mod"
     convert x = x
 

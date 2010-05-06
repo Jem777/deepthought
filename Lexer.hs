@@ -77,6 +77,8 @@ varId = upperId <?> "variable"
 moduleOp = "::"
 modSep x    = sepBy1 x (reservedOp moduleOp) 
 colonSep p  = sepBy p colon
+infixFun = between (char '`') (char '`') funcId
+prefixOp = parens operator <?> "operator"
 
 concatWith [] sep  =  []
 concatWith ws sep  =  foldr1 (\w s -> w ++ sep ++ s) ws

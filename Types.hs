@@ -8,8 +8,8 @@ module Types
 import Lexer
 import Text.ParserCombinators.Parsec
 
-data Datatype = List [Expression]
-            -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
+data Datatype = --primitve datatypes and lists and tupels
+            List [Expression]
             | Tupel [Expression]
             | Number Integer
             | Float Double
@@ -17,17 +17,19 @@ data Datatype = List [Expression]
             | Char Char
             | Atom String
             | Operator String
-            | Lambda [Expression] Expression --[Expr] are the arguments, Expr is the Body
-            | Function String [Expression] Expression --first is the ident, second the args, third the body
             deriving (Show)
 
-data Expression = Variable [Char]
+data Expression = -- everything that evals to an datatype
+            Variable [Char]
             | Application Expression [Expression]
+            -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
+            | Lambda [Expression] Expression --[Expr] are the arguments, Expr is the Body
+            | Function String [Expression] Expression --first is the ident, second the args, third the body
             | Datatype Datatype
             | Wildcard
             deriving (Show)
 
-data Tree = Tree String [String] [([String], String)] [Datatype] -- modname, exports, imports, functions
+data Tree = Tree String [String] [([String], String)] [Expression] -- modname, exports, imports, functions
             deriving (Show)
 -- some really trivial functions
 

@@ -5,6 +5,12 @@ module Parser (parseAll)
 -- a parser for my new language
 --
 
+-- Parsing TODOs:
+-- list comprehention
+-- list constructor
+-- guards
+-- maybe better import
+
 import ApplicativeParsec
 import Lexer 
 import Types 
