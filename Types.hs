@@ -27,7 +27,7 @@ data Expression = Variable [Char]
             | Wildcard
             deriving (Show)
 
-data Tree = Tree String [String] [(String, String)] [Datatype] -- modname, exports, imports, functions
+data Tree = Tree String [String] [([String], String)] [Datatype] -- modname, exports, imports, functions
             deriving (Show)
 -- some really trivial functions
 

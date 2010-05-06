@@ -12,21 +12,20 @@ import Expr
 
 parseAll = parse everything ""
 
-everything = do
+{-everything = do
     header <- parseHeader
     funs <- many declaration
     return (header, funs)
-
-parseHeader = do 
+-}
+everything = do 
     whiteSpace 
     modulename <- parseModule
     exports <- (many1 parseExport)
     imports <- (many parseImport)
-    return (modulename, concat exports, imports)
+    funcs <- (many function)
+    return (Tree modulename (concat exports) imports funcs)
 
-parseModule = do 
-    (reserved "module")
-    moduleId
+parseModule = (reserved "module") >> moduleId
 
 parseImport = do --TODO: restructure this - it probably need a new type
     (reserved "import")
