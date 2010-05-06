@@ -3,8 +3,8 @@ module Lexer
 -- 
 -- the lexer for my new language
 --
+
 import ApplicativeParsec
---import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 
 languageDef

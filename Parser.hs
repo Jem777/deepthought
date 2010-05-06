@@ -4,7 +4,7 @@ module Parser (parseAll)
 --
 -- a parser for my new language
 --
---import Text.ParserCombinators.Parsec
+
 import ApplicativeParsec
 import Lexer 
 import Types 
@@ -12,11 +12,6 @@ import Expr
 
 parseAll = parse everything ""
 
-{-everything = do
-    header <- parseHeader
-    funs <- many declaration
-    return (header, funs)
--}
 everything = do 
     whiteSpace 
     modulename <- parseModule
@@ -35,10 +30,6 @@ parseImport = do --TODO: restructure this - it probably need a new type
 
 parseExport :: GenParser Char st [String]
 parseExport = reserved "export" >> squares (commaSep funcId)
-{-parseExport = do 
-    (reserved "export")
-    squares (commaSep funcId)
--}
 
 declaration = do
     left <- function
@@ -46,17 +37,6 @@ declaration = do
     right <- many1 expression
     return (left, right)
 
-{-function = 
-    ( do 
-        ident <- funcId
-        args <- many pattern
-        return (ident, args))
-    <|> ( do
-        arg <- pattern
-        ident <- operator
-        args <- many1 pattern
-        return (ident, (arg:args)))
--}
 
 function = f <$> (funHead <|> opHead) <*> (reservedOp "->" *> expression)
         where f a b = Function (fst a) (snd a) b
