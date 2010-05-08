@@ -7,8 +7,6 @@ module Parser (parseAll)
 
 -- Parsing TODOs:
 -- list comprehention
--- list constructor
--- guards
 -- maybe better import
 
 import ApplicativeParsec
@@ -16,15 +14,11 @@ import Lexer
 import Types 
 import Expr
 
-parseAll = parse everything ""
+parseAll = parse deepthought ""
 
-everything = do 
-    whiteSpace 
-    modulename <- parseModule
-    exports <- (many1 parseExport)
-    imports <- (many parseImport)
-    funcs <- (many function)
-    return (Tree modulename (concat exports) imports funcs)
+deepthought :: GenParser Char st Tree
+deepthought = f <$> (whiteSpace *> parseModule) <*> many1 parseExport <*> many parseImport <*> many function
+        where f a b = Tree a (concat b)
 
 parseModule = (reserved "module") >> moduleId
 
@@ -37,12 +31,15 @@ parseImport = do --TODO: restructure this - it probably need a new type
 parseExport :: GenParser Char st [String]
 parseExport = reserved "export" >> squares (commaSep funcId)
 
-function = f <$> (funHead <|> opHead) <*> (reservedOp "->" *> expression)
-        where f a b = Function (fst a) (snd a) b
+function = f <$> (funHead <|> opHead) <*> guard <*> body <*> closure
+        where f a = Function (fst a) (snd a)
 
-funHead = (,) <$> funcId <*> many pattern
-opHead = do
-        arg <- pattern
-        ident <- operator
-        args <- many1 pattern
-        return (ident, (arg:args))
+funHead = (,) <$> atom <*> many (try pattern)
+
+opHead :: GenParser Char st (Datatype, [Expression])
+opHead = f <$> pattern <*> op <*> many1 (try pattern)
+        where f arg ident args = (ident, arg:args)
+
+body = reservedOp "->" >> expression 
+closure = option [] (reserved "where" >> parens (many1 function))
+guard = option (Datatype (Atom "true")) (reserved "when" >> expression)

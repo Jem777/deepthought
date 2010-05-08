@@ -24,33 +24,25 @@ data Expression = -- everything that evals to an datatype
             | Application Expression [Expression]
             -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
             | Lambda [Expression] Expression --[Expr] are the arguments, Expr is the Body
-            | Function String [Expression] Expression --first is the ident, second the args, third the body
+            | Function Datatype [Expression] Expression Expression [Expression] --first is the ident, second the args, third the guard, fourth the body, fifth closures
             | Datatype Datatype
             | Wildcard
             deriving (Show)
 
 data Tree = Tree String [String] [([String], String)] [Expression] -- modname, exports, imports, functions
             deriving (Show)
+
+
 -- some really trivial functions
 
-atom :: CharParser st Datatype
-atom = funcId >>= return . Atom
-
-bool :: CharParser st Datatype
+fun = funcId >>= return . Atom
+atom = fun
 bool = boolId >>= return . Atom
-
-stringTok :: CharParser st Datatype
-stringTok = stringLiteral >>= return . String 
-
-number :: CharParser st Datatype
+str = stringLiteral >>= return . String 
 number = integer >>= return . Number
-
-double :: CharParser st Datatype
 double = float >>= return . Float
-
-charTok :: CharParser st Datatype
-charTok = charLiteral >>= return . Char
+chr = charLiteral >>= return . Char
+op = operator >>= return . Operator
 
 list x = squares (commaSep x) >>= return . List
-
 tupel x = parens (commaSep x) >>= return . Tupel

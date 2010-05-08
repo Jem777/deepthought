@@ -32,8 +32,8 @@ primitive :: CharParser st Datatype
 primitive =
         number
     <|> double
-    <|> charTok
-    <|> stringTok
+    <|> chr
+    <|> str
     <|> atom
     <?> "primitive" 
 
