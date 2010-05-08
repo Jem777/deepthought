@@ -55,7 +55,9 @@ commaSep1   = P.commaSep1 lexer
 stringLiteral = P.stringLiteral lexer
 charLiteral = P.charLiteral lexer
 integer     = P.integer lexer
-float       = P.float lexer
+
+float = ((symbol "-") >> (P.float lexer) >>= return . negate) <|> (P.float lexer)
+
 
 lowerId = P.identifier lexer
 upperId :: GenParser Char st [Char]
