@@ -30,8 +30,8 @@ postfix name       = Postfix (do{ reservedOp name; return (\y -> op_to_expr name
 
 primitive :: CharParser st Datatype
 primitive =
-        number
-    <|> double
+        (try double)
+    <|> number
     <|> chr
     <|> str
     <|> atom
@@ -86,7 +86,7 @@ application :: GenParser Char st Expression
 application = Application <$> appHead <*> (many1 expr)
 
 lambda :: CharParser st Expression
-lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 pattern)) <*> ((reservedOp "->") *> expression)
+lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 (varId >>= return . Variable))) <*> ((reservedOp "->") *> expression)
 
 -- internal functions
 

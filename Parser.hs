@@ -1,4 +1,4 @@
-module Parser (parseAll)
+module Parser 
     where
 
 --
@@ -15,6 +15,11 @@ import Types
 import Expr
 
 parseAll = parse deepthought ""
+
+testParse y z = f (parse y "" z)
+        where
+            f (Right x) = show x
+            f (Left x) = show x
 
 deepthought :: GenParser Char st Tree
 deepthought = f <$> (whiteSpace *> parseModule) <*> many1 parseExport <*> many parseImport <*> many function
