@@ -5,9 +5,6 @@ module Types
 -- definition of all necessary types for parsing
 -- and types for an intermediate byte-code
 
-import Lexer
-import Text.ParserCombinators.Parsec
-
 data Datatype = --primitve datatypes and lists and tupels
             List [Expression]
             | Tupel [Expression]
@@ -17,7 +14,7 @@ data Datatype = --primitve datatypes and lists and tupels
             | Char Char
             | Atom String
             | Operator String
-            deriving (Show)
+            deriving (Show, Eq)
 
 data Expression = -- everything that evals to an datatype
             Variable [Char]
@@ -27,22 +24,27 @@ data Expression = -- everything that evals to an datatype
             | Function Datatype [Expression] Expression Expression [Expression] --first is the ident, second the args, third the guard, fourth the body, fifth closures
             | Datatype Datatype
             | Wildcard
-            deriving (Show)
+            deriving (Show, Eq)
 
 data Tree = Tree String [String] [([String], String)] [Expression] -- modname, exports, imports, functions
-            deriving (Show)
+            deriving (Show, Eq)
 
 
--- some really trivial functions
+treeName (Tree a _ _ _) = a
+treeExports (Tree _ a _ _) = a
+treeImports (Tree _ _ a _) = a
+treeFuncs (Tree _ _ _ a) = a
 
-fun = funcId >>= return . Atom
-atom = atomId >>= return . Atom
-bool = boolId >>= return . Atom
-str = stringLiteral >>= return . String 
-number = integer >>= return . Number
-double = float >>= return . Float
-chr = charLiteral >>= return . Char
-op = operator >>= return . Operator
+varName (Variable a) = a
+appName (Application a _) = a
+appArgs (Application _ a) = a
+lambdaArgs (Lambda a _) = a
+lambdaBody (Lambda _ a) = a
+funcName (Function a _ _ _ _) = a
+funcArgs (Function _ a _ _ _) = a
+funcGuard (Function _ _ a _ _) = a
+funcBody (Function _ _ _ a _) = a
+funcWhere (Function _ _ _ _ a) = a
+datatype (Datatype a) = a
 
-list x = squares (commaSep x) >>= return . List
-tupel x = parens (commaSep x) >>= return . Tupel
+atomName (Atom a) = a

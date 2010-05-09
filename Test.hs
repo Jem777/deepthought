@@ -23,6 +23,18 @@ genList (f, l) = TestList (map (\(a, b, c) -> (TestCase (assertEqual a (show b) 
 listExpression = (expression, [
         ("Expression", (Lambda [Variable "Bar"] (Datatype (Number 3))), "(\\Bar -> 3)")
         ])
+
+combine a b = (fst a, [(x y) | x <- (snd a), y <- (snd b)])
+
+listFunction = (function, [])
+
+listComplex = (expression, [
+        (\(n, a, b) -> ("Lambda /w " ++ n, (Lambda [Variable "Bar"] (Datatype a)), "(\\Bar -> " ++ b ++ ")")),
+        (\(n, a, b) -> ("Application /w " ++ n, (Application (Datatype (Atom "bar")) [Datatype a]), "bar " ++ b)),
+        (\(n, a, b) -> ("Operation (+)/w " ++ n, (Application (Datatype (Operator "+")) [(Datatype (Number 2)), (Datatype a)]), "2 + " ++ b)),
+        (\(n, a, b) -> ("Operation (*)/w " ++ n, (Application (Datatype (Operator "*")) [(Datatype a), (Datatype a)]), b ++ "*" ++ b))
+        ])
+
 listPrimitive = (primitive, [
         ("Number dez", (Number 3), "03"),
         ("Number neg", (Number (-2)), "-2"),

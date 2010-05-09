@@ -78,12 +78,12 @@ expr =
 appHead :: GenParser Char st Expression
 appHead = 
     try (parens lambda) 
-    <|> (atom >>= return . Datatype)
+    <|> (fun >>= return . Datatype)
     <|> (prefixOp >>= return . Datatype . Operator)
     <|> (varId >>= return . Variable)
 
 application :: GenParser Char st Expression
-application = Application <$> appHead <*> (many1 expr)
+application = Application <$> appHead <*> (many1 (try (fun >>= return . Datatype) <|> expr))
 
 lambda :: CharParser st Expression
 lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 (varId >>= return . Variable))) <*> ((reservedOp "->") *> expression)

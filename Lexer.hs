@@ -6,6 +6,7 @@ module Lexer
 
 import ApplicativeParsec
 import qualified Text.ParserCombinators.Parsec.Token as P
+import Types
 
 languageDef
     = P.LanguageDef
@@ -15,10 +16,10 @@ languageDef
     , P.nestedComments = True
     , P.identStart     = lower
     , P.identLetter    = alphaNum <|> char '_'
-    , P.opStart        = oneOf ":!#$%&*+./<=>?@\\^|-~"              
-    , P.opLetter       = oneOf ":!#$%&*+./<=>?@\\^|-~"    
+    , P.opStart        = oneOf ":!#$%&*+./<=>?\\^|-~"              
+    , P.opLetter       = oneOf ":!#$%&*+./<=>?\\^|~"    
     , P.reservedOpNames= ["::","..","=","\\","|"
-                       ,"<-","->","@","~",">>"
+                       ,"<-","->","@","~"
                        ]
     , P.reservedNames  = ["let","in","case","of"
                        ,"if","then","else"
@@ -26,10 +27,10 @@ languageDef
                        ,"class","default","deriving"
                        ,"infix","infixl","infixr"
                        ,"instance","do"
-                       ,"newtype","where"
+                       ,"newtype"
                        ,"primitive", 
                        "module","import", "export", 
-                       "true", "false", "none"
+                       "where", "when"
                        ]          
     , P.caseSensitive  = True                                   
     }
@@ -86,3 +87,16 @@ prefixOp = parens operator <?> "operator"
 concatWith [] sep  =  []
 concatWith ws sep  =  foldr1 (\w s -> w ++ sep ++ s) ws
 
+-- some really trivial functions
+
+fun = funcId >>= return . Atom
+atom = atomId >>= return . Atom
+bool = boolId >>= return . Atom
+str = stringLiteral >>= return . String 
+number = integer >>= return . Number
+double = float >>= return . Float
+chr = charLiteral >>= return . Char
+op = operator >>= return . Operator
+
+list x = squares (commaSep x) >>= return . List
+tupel x = parens (commaSep x) >>= return . Tupel

@@ -39,7 +39,7 @@ parseExport = reserved "export" >> squares (commaSep funcId)
 function = f <$> (funHead <|> opHead) <*> guard <*> body <*> closure
         where f a = Function (fst a) (snd a)
 
-funHead = (,) <$> atom <*> many (try pattern)
+funHead = (,) <$> fun <*> many (try pattern)
 
 opHead :: GenParser Char st (Datatype, [Expression])
 opHead = f <$> pattern <*> op <*> many1 (try pattern)
