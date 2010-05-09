@@ -36,7 +36,7 @@ data Tree = Tree String [String] [([String], String)] [Expression] -- modname, e
 -- some really trivial functions
 
 fun = funcId >>= return . Atom
-atom = fun
+atom = atomId >>= return . Atom
 bool = boolId >>= return . Atom
 str = stringLiteral >>= return . String 
 number = integer >>= return . Number

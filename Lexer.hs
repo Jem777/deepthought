@@ -74,12 +74,13 @@ boolId =
 
 wildcard = symbol "_" <?> "wildcard"
 funcId = lowerId <?> "function"
+atomId = char '@' >> lowerId <?> "atom"
 moduleId = upperId <?> "module"
 varId = upperId <?> "variable"
 moduleOp = "::"
 modSep x    = sepBy1 x (reservedOp moduleOp) 
 colonSep p  = sepBy p colon
-infixFun = between (char '`') (char '`') funcId
+infixFun = between (char '`') (char '`') funcId <?> "function"
 prefixOp = parens operator <?> "operator"
 
 concatWith [] sep  =  []

@@ -46,5 +46,5 @@ opHead = f <$> pattern <*> op <*> many1 (try pattern)
         where f arg ident args = (ident, arg:args)
 
 body = reservedOp "->" >> expression 
-closure = option [] (reserved "where" >> parens (many1 function))
+closure = option [] (reserved "where" >> (parens (many1 function)) <|> (function >>= return . (:[])))
 guard = option (Datatype (Atom "true")) (reserved "when" >> expression)

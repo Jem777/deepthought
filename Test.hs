@@ -1,7 +1,6 @@
 module Test where
 
 import Test.HUnit
-import Text.ParserCombinators.Parsec
 import Parser
 import Expr
 import Types
@@ -38,8 +37,9 @@ listPrimitive = (primitive, [
         ("Char ASCII", (Char 'f'), "'f'"),
         ("Char Unicode", (Char 'ä'), "'ä'"),
         ("String ASCII", (String "foo bar"), "\"foo bar\""),
-        ("Atom", (Atom "atom"), "atom"),
-        ("Atom /w num", (Atom "atom123"), "atom123"),
-        ("Atom /w underscore", (Atom "atom_f"), "atom_f"),
-        ("Atom /w uppercase", (Atom "atOM"), "atOM")
+        ("String Unicode", (String "äöüß"), "\"äöüß\""),
+        ("Atom", (Atom "atom"), "@atom"),
+        ("Atom /w num", (Atom "atom123"), "@atom123"),
+        ("Atom /w underscore", (Atom "atom_f"), "@atom_f"),
+        ("Atom /w uppercase", (Atom "atOM"), "@atOM")
         ])
