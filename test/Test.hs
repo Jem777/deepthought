@@ -6,6 +6,7 @@ import Expr
 import Types
 
 
+parser = genList (combine listComplex listPrimitive)
 
 --------------------
 -- Parser testing --

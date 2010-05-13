@@ -22,7 +22,7 @@ testParse y z = f (parse y "" z)
             f (Left x) = show x
 
 deepthought :: GenParser Char st Tree
-deepthought = f <$> (whiteSpace *> parseModule) <*> many1 parseExport <*> many parseImport <*> many (function `endBy` semi)
+deepthought = f <$> (whiteSpace *> parseModule) <*> many1 parseExport <*> many parseImport <*> function `endBy` semi
         where f a b = Tree a (concat b)
 
 parseModule = (reserved "module") >> moduleId
@@ -46,5 +46,5 @@ opHead = f <$> pattern <*> op <*> many1 (try pattern)
         where f arg ident args = (ident, arg:args)
 
 body = reservedOp "->" >> expression 
-closure = option [] (reserved "where" >> (parens (many1 (function `endBy` semi))) <|> ((function `endBy` semi) >>= return . (:[])))
+closure = option [] (reserved "where" >> (parens (function `endBy1` semi)) <|> ((function <* semi) >>= return . (:[])))
 guard = option (Datatype (Atom "true")) (reserved "when" >> expression)
