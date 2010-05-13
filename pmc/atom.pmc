@@ -13,25 +13,10 @@
 
 #include "parrot/parrot.h"
 
-pmclass Atom {
-
-    PMC* absolute(PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* add(PMC* value, PMC* dest) {
-        return PMCNULL;
-    }
-
+pmclass Atom extends scalar provides scalar auto_attrs dynpmc {
+    ATTR STRING * atom_val;
+/*
     void add_attribute(STRING* name, PMC* type) {
-    }
-
-    PMC* add_float(FLOATVAL value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* add_int(INTVAL value, PMC* dest) {
-        return PMCNULL;
     }
 
     void add_method(STRING* method_name, PMC* sub_pmc) {
@@ -55,7 +40,7 @@ pmclass Atom {
     INTVAL can(STRING* method) {
         return (INTVAL)0;
     }
-
+*/
     PMC* clone() {
         return PMCNULL;
     }
@@ -79,56 +64,12 @@ pmclass Atom {
     INTVAL cmp_string(PMC* value) {
         return (INTVAL)0;
     }
-
-    PMC* concatenate(PMC* value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* concatenate_str(STRING* value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    void decrement() {
-    }
-
+/*
     INTVAL defined() {
         return (INTVAL)0;
     }
 
-    INTVAL defined_keyed(PMC* key) {
-        return (INTVAL)0;
-    }
-
-    INTVAL defined_keyed_int(INTVAL key) {
-        return (INTVAL)0;
-    }
-
-    INTVAL defined_keyed_str(STRING* key) {
-        return (INTVAL)0;
-    }
-
-    void delete_keyed(PMC* key) {
-    }
-
-    void delete_keyed_int(INTVAL key) {
-    }
-
-    void delete_keyed_str(STRING* key) {
-    }
-
     void destroy() {
-    }
-
-    PMC* divide(PMC* value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* divide_float(FLOATVAL value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* divide_int(INTVAL value, PMC* dest) {
-        return PMCNULL;
     }
 
     INTVAL does(STRING* role) {
@@ -139,51 +80,25 @@ pmclass Atom {
         return (INTVAL)0;
     }
 
-    INTVAL elements() {
-        return (INTVAL)0;
-    }
-
-    INTVAL exists_keyed(PMC* key) {
-        return (INTVAL)0;
-    }
-
-    INTVAL exists_keyed_int(INTVAL key) {
-        return (INTVAL)0;
-    }
-
-    INTVAL exists_keyed_str(STRING* key) {
-        return (INTVAL)0;
-    }
-
     PMC* find_method(STRING* method_name) {
-        return PMCNULL;
-    }
-
-    PMC* floor_divide(PMC* value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* floor_divide_float(FLOATVAL value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* floor_divide_int(INTVAL value, PMC* dest) {
         return PMCNULL;
     }
 
     void freeze(PMC* info) {
     }
 
-    PMC* get_attr_keyed(PMC* key, STRING* idx) {
-        return PMCNULL;
-    }
-
     PMC* get_attr_str(STRING* idx) {
         return PMCNULL;
     }
-
-    INTVAL get_bool() {
-        return (INTVAL)0;
+*/
+    VTABLE INTVAL get_bool() {
+        /*returns 1 if string == true, 0 otherwise*/
+        STRING *atom_val;
+        GET_ATTR_atom_val(INTERP, SELF, atom_val);
+        if atom_val == "false" {
+            return (INTVAL)0;
+        }
+        return (INTVAL)1;
     }
 
     PMC* get_class() {
@@ -191,18 +106,6 @@ pmclass Atom {
     }
 
     INTVAL get_integer() {
-        return (INTVAL)0;
-    }
-
-    INTVAL get_integer_keyed(PMC* key) {
-        return (INTVAL)0;
-    }
-
-    INTVAL get_integer_keyed_int(INTVAL key) {
-        return (INTVAL)0;
-    }
-
-    INTVAL get_integer_keyed_str(STRING* key) {
         return (INTVAL)0;
     }
 
@@ -214,31 +117,7 @@ pmclass Atom {
         return (FLOATVAL)0;
     }
 
-    FLOATVAL get_number_keyed(PMC* key) {
-        return (FLOATVAL)0;
-    }
-
-    FLOATVAL get_number_keyed_int(INTVAL key) {
-        return (FLOATVAL)0;
-    }
-
-    FLOATVAL get_number_keyed_str(STRING* key) {
-        return (FLOATVAL)0;
-    }
-
     PMC* get_pmc() {
-        return PMCNULL;
-    }
-
-    PMC* get_pmc_keyed(PMC* key) {
-        return PMCNULL;
-    }
-
-    PMC* get_pmc_keyed_int(INTVAL key) {
-        return PMCNULL;
-    }
-
-    PMC* get_pmc_keyed_str(STRING* key) {
         return PMCNULL;
     }
 
@@ -246,36 +125,16 @@ pmclass Atom {
         return (void*)0;
     }
 
-    void* get_pointer_keyed(PMC* key) {
-        return (void*)0;
-    }
-
-    void* get_pointer_keyed_int(INTVAL key) {
-        return (void*)0;
-    }
-
-    void* get_pointer_keyed_str(STRING* key) {
-        return (void*)0;
-    }
-
     STRING* get_repr() {
-        return (STRING*)0;
+        return SELF.get_string();
     }
 
-    STRING* get_string() {
-        return (STRING*)0;
-    }
+    VTABLE STRING* get_string() {
+        /*returns the string of the atom*/
+        STRING *atom_val;
+        GET_ATTR_atom_val(INTERP, SELF, atom_val);
 
-    STRING* get_string_keyed(PMC* key) {
-        return (STRING*)0;
-    }
-
-    STRING* get_string_keyed_int(INTVAL key) {
-        return (STRING*)0;
-    }
-
-    STRING* get_string_keyed_str(STRING* key) {
-        return (STRING*)0;
+        return atom_val;
     }
 
     INTVAL hashvalue() {
@@ -285,90 +144,25 @@ pmclass Atom {
     void i_absolute() {
     }
 
-    void i_add(PMC* value) {
-    }
-
-    void i_add_float(FLOATVAL value) {
-    }
-
-    void i_add_int(INTVAL value) {
-    }
-
-    void i_concatenate(PMC* value) {
-    }
-
-    void i_concatenate_str(STRING* value) {
-    }
-
-    void i_divide(PMC* value) {
-    }
-
-    void i_divide_float(FLOATVAL value) {
-    }
-
-    void i_divide_int(INTVAL value) {
-    }
-
-    void i_floor_divide(PMC* value) {
-    }
-
-    void i_floor_divide_float(FLOATVAL value) {
-    }
-
-    void i_floor_divide_int(INTVAL value) {
-    }
-
     void i_logical_not() {
     }
 
-    void i_modulus(PMC* value) {
-    }
-
-    void i_modulus_float(FLOATVAL value) {
-    }
-
-    void i_modulus_int(INTVAL value) {
-    }
-
-    void i_multiply(PMC* value) {
-    }
-
-    void i_multiply_float(FLOATVAL value) {
-    }
-
-    void i_multiply_int(INTVAL value) {
-    }
-
-    void i_neg() {
-    }
-
-    void i_repeat(PMC* value) {
-    }
-
-    void i_repeat_int(INTVAL value) {
-    }
-
-    void i_subtract(PMC* value) {
-    }
-
-    void i_subtract_float(FLOATVAL value) {
-    }
-
-    void i_subtract_int(INTVAL value) {
-    }
-
-    void increment() {
-    }
-
     void init() {
+        SELF.set_string("false");
     }
 
     void init_int(INTVAL initializer) {
     }
 
-    void init_pmc(PMC* initializer) {
+    void init_pmc(PMC* value) {
+        if (!PMC_IS_NULL(value)) {
+            SELF.set_string_native(VTABLE_get_string(INTERP, value));
+        }
+        else {
+            SELF.set_string_native("false");
+        }
     }
-
+/*
     PMC* inspect() {
         return PMCNULL;
     }
@@ -384,7 +178,7 @@ pmclass Atom {
     opcode_t* invoke(void* next) {
         return (opcode_t*)0;
     }
-
+*/
     INTVAL is_equal(PMC* value) {
         return (INTVAL)0;
     }
@@ -427,64 +221,8 @@ pmclass Atom {
 
     void mark() {
     }
-
-    PMC* modulus(PMC* value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* modulus_float(FLOATVAL value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* modulus_int(INTVAL value, PMC* dest) {
-        return PMCNULL;
-    }
-
+/*
     void morph(PMC* type) {
-    }
-
-    PMC* multiply(PMC* value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* multiply_float(FLOATVAL value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* multiply_int(INTVAL value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* neg(PMC* dest) {
-        return PMCNULL;
-    }
-
-    FLOATVAL pop_float() {
-        return (FLOATVAL)0;
-    }
-
-    INTVAL pop_integer() {
-        return (INTVAL)0;
-    }
-
-    PMC* pop_pmc() {
-        return PMCNULL;
-    }
-
-    STRING* pop_string() {
-        return (STRING*)0;
-    }
-
-    void push_float(FLOATVAL value) {
-    }
-
-    void push_integer(INTVAL value) {
-    }
-
-    void push_pmc(PMC* value) {
-    }
-
-    void push_string(STRING* value) {
     }
 
     void remove_attribute(STRING* name) {
@@ -502,80 +240,21 @@ pmclass Atom {
     void remove_vtable_override(STRING* vtable_name) {
     }
 
-    PMC* repeat(PMC* value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* repeat_int(INTVAL value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    void set_attr_keyed(PMC* key, STRING* idx, PMC* value) {
-    }
-
     void set_attr_str(STRING* idx, PMC* value) {
     }
 
     void set_bool(INTVAL value) {
     }
 
-    void set_integer_keyed(PMC* key, INTVAL value) {
-    }
-
-    void set_integer_keyed_int(INTVAL key, INTVAL value) {
-    }
-
-    void set_integer_keyed_str(STRING* key, INTVAL value) {
-    }
-
     void set_integer_native(INTVAL value) {
-    }
-
-    void set_number_keyed(PMC* key, FLOATVAL value) {
-    }
-
-    void set_number_keyed_int(INTVAL key, FLOATVAL value) {
-    }
-
-    void set_number_keyed_str(STRING* key, FLOATVAL value) {
     }
 
     void set_number_native(FLOATVAL value) {
     }
 
-    void set_pmc(PMC* value) {
-    }
-
-    void set_pmc_keyed(PMC* key, PMC* value) {
-    }
-
-    void set_pmc_keyed_int(INTVAL key, PMC* value) {
-    }
-
-    void set_pmc_keyed_str(STRING* key, PMC* value) {
-    }
-
     void set_pointer(void* value) {
     }
-
-    void set_pointer_keyed(PMC* key, void* value) {
-    }
-
-    void set_pointer_keyed_int(INTVAL key, void* value) {
-    }
-
-    void set_pointer_keyed_str(STRING* key, void* value) {
-    }
-
-    void set_string_keyed(PMC* key, STRING* value) {
-    }
-
-    void set_string_keyed_int(INTVAL key, STRING* value) {
-    }
-
-    void set_string_keyed_str(STRING* key, STRING* value) {
-    }
-
+*/
     void set_string_native(STRING* value) {
     }
 
@@ -586,60 +265,10 @@ pmclass Atom {
         return PMCNULL;
     }
 
-    FLOATVAL shift_float() {
-        return (FLOATVAL)0;
-    }
-
-    INTVAL shift_integer() {
-        return (INTVAL)0;
-    }
-
-    PMC* shift_pmc() {
-        return PMCNULL;
-    }
-
-    STRING* shift_string() {
-        return (STRING*)0;
-    }
-
-    void splice(PMC* value, INTVAL offset, INTVAL count) {
-    }
-
-    void substr(INTVAL offset, INTVAL length, PMC* dest) {
-    }
-
-    STRING* substr_str(INTVAL offset, INTVAL length) {
-        return (STRING*)0;
-    }
-
-    PMC* subtract(PMC* value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* subtract_float(FLOATVAL value, PMC* dest) {
-        return PMCNULL;
-    }
-
-    PMC* subtract_int(INTVAL value, PMC* dest) {
-        return PMCNULL;
-    }
-
     void thaw(PMC* info) {
     }
 
     void thawfinish(PMC* info) {
-    }
-
-    void unshift_float(FLOATVAL value) {
-    }
-
-    void unshift_integer(INTVAL value) {
-    }
-
-    void unshift_pmc(PMC* value) {
-    }
-
-    void unshift_string(STRING* value) {
     }
 
     void visit(PMC* info) {
