@@ -16,8 +16,8 @@ languageDef
     , P.nestedComments = True
     , P.identStart     = lower
     , P.identLetter    = alphaNum <|> char '_'
-    , P.opStart        = oneOf ":!#$%&*+./<=>?\\^|-~"              
-    , P.opLetter       = oneOf ":!#$%&*+./<=>?\\^|~"    
+    , P.opStart        = oneOf ":!#$%&*+./<=>?\\^|-~"
+    , P.opLetter       = oneOf ":!#$%&*+./<=>?\\^|-~"
     , P.reservedOpNames= ["::","..","=","\\","|"
                        ,"<-","->","@","~"
                        ]
@@ -56,8 +56,7 @@ commaSep1   = P.commaSep1 lexer
 stringLiteral = P.stringLiteral lexer
 charLiteral = P.charLiteral lexer
 integer     = P.integer lexer
-
-float = ((symbol "-") >> (P.float lexer) >>= return . negate) <|> (P.float lexer)
+float       = P.float lexer
 
 
 lowerId = P.identifier lexer
@@ -87,16 +86,3 @@ prefixOp = parens operator <?> "operator"
 concatWith [] sep  =  []
 concatWith ws sep  =  foldr1 (\w s -> w ++ sep ++ s) ws
 
--- some really trivial functions
-
-fun = funcId >>= return . Atom
-atom = atomId >>= return . Atom
-bool = boolId >>= return . Atom
-str = stringLiteral >>= return . String 
-number = integer >>= return . Number
-double = float >>= return . Float
-chr = charLiteral >>= return . Char
-op = operator >>= return . Operator
-
-list x = squares (commaSep x) >>= return . List
-tupel x = parens (commaSep x) >>= return . Tupel

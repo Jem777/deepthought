@@ -37,15 +37,10 @@ listComplex = (expression, [
 
 listPrimitive = (primitive, [
         ("Number dez", (Number 3), "03"),
-        ("Number neg", (Number (-2)), "-2"),
-        ("Number neg", (Number (-22)), "-22"),
         ("Number hex", (Number 255), "0xFF"),
         ("Number oct", (Number 83), "0o123"),
-        ("Number hex neg", (Number (-255)), "-0xFF"),
-        ("Number oct neg", (Number (-83)), "-0o123"),
         ("Float", (Float 2.4), "2.4"),
         ("Float 0.x", (Float 0.4), "0.4"),
-        ("Float neg", (Float (-4.333)), "-4.333"),
         ("Char ASCII", (Char 'f'), "'f'"),
         ("Char Unicode", (Char 'ä'), "'ä'"),
         ("String ASCII", (String "foo bar"), "\"foo bar\""),

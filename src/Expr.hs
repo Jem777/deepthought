@@ -13,6 +13,7 @@ import Text.ParserCombinators.Parsec.Expr
 
 table :: OperatorTable Char st Expression
 table   = [ 
+        [prefix "+", prefix "-"],
         [binary "." AssocRight],
         [binary "**" AssocRight, binary "^" AssocRight, binary "^^" AssocRight],
         [postfix "++"], 
@@ -25,7 +26,7 @@ table   = [
         ]
 
 binary  name assoc = Infix (do{ reservedOp name; return (\x y -> op_to_expr name [x,y])}) assoc
-prefix  name       = Prefix (do{ reservedOp name; return (\y -> op_to_expr name [y]) })
+prefix  name       = Prefix (do{ reservedOp name; return (\y -> prefixop_to_expr name [y]) })
 postfix name       = Postfix (do{ reservedOp name; return (\y -> op_to_expr name [y]) })
 
 primitive :: CharParser st Datatype
@@ -88,17 +89,29 @@ application = Application <$> appHead <*> (many1 (try (fun >>= return . Datatype
 lambda :: CharParser st Expression
 lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 (varId >>= return . Variable))) <*> ((reservedOp "->") *> expression)
 
+-- some really trivial functions
+
+fun = funcId >>= return . Atom
+atom = atomId >>= return . Atom
+bool = boolId >>= return . Atom
+str = stringLiteral >>= return . String 
+number = natural >>= return . Number
+double = float >>= return . Float
+chr = charLiteral >>= return . Char
+op = operator >>= return . Operator
+
+list x = squares (commaSep x) >>= return . List
+tupel x = parens (commaSep x) >>= return . Tupel
+
 -- internal functions
 
 op_to_expr :: String -> [Expression] -> Expression
 op_to_expr = Application . Datatype . Operator
 
-op_to_atom :: String -> Datatype
-op_to_atom = Atom . convert
+prefixop_to_expr :: String -> [Expression] -> Expression
+prefixop_to_expr = Application . Datatype . convert
     where
-    convert "+" = "add"
-    convert "-" = "sub"
-    convert "/" = "div"
-    convert "%" = "mod"
-    convert x = x
+    convert "+" = Atom "id"
+    convert "-" = Atom "neg"
+    convert x = Operator x
 
