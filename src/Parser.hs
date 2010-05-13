@@ -22,7 +22,7 @@ testParse y z = f (parse y "" z)
             f (Left x) = show x
 
 deepthought :: GenParser Char st Tree
-deepthought = f <$> (whiteSpace *> parseModule) <*> many1 parseExport <*> many parseImport <*> (many function)
+deepthought = f <$> (whiteSpace *> parseModule) <*> many parseExport <*> many parseImport <*> ((many function) <* eof)
         where f a b = Tree a (concat b)
 
 parseModule = (reserved "module") >> moduleId
@@ -35,6 +35,9 @@ parseImport = do --TODO: restructure this - it probably needs a new type
 
 parseExport :: GenParser Char st [String]
 parseExport = reserved "export" >> squares (commaSep funcId)
+
+parseCompile :: GenParser Char st [String]
+parseCompile = reserved "compile" >> squares (commaSep funcId)
 
 function = f <$> (funHead <|> opHead) <*> guard <*> body <*> (funTail <|> closure)
         where f a = Function (fst a) (snd a)
@@ -50,5 +53,5 @@ body = reservedOp "->" >> expression
 funTail :: GenParser Char st [Expression]
 funTail = semi >> return []
 
-closure = option [] (reserved "where" >> (parens (many1 function)) <|> ((function <* semi) >>= return . (:[])))
+closure = reserved "where" >> (parens (many1 function)) <|> ((function <* semi) >>= return . (:[]))
 guard = option (Datatype (Atom "true")) (reserved "when" >> expression)

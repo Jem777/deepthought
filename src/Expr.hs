@@ -19,6 +19,7 @@ table   = [
         [postfix "++"], 
         [binary "*" AssocLeft, binary "/" AssocLeft, binary "%" AssocLeft], 
         [binary "+" AssocLeft, binary "-" AssocLeft],
+        [binary ":" AssocRight],
         [binary "==" AssocLeft, binary "!=" AssocLeft, binary "<" AssocLeft, binary "<=" AssocLeft, binary ">" AssocLeft, binary ">=" AssocLeft],
         [binary "&&" AssocRight],
         [binary "||" AssocRight],
@@ -28,6 +29,7 @@ table   = [
 binary  name assoc = Infix (do{ reservedOp name; return (\x y -> op_to_expr name [x,y])}) assoc
 prefix  name       = Prefix (do{ reservedOp name; return (\y -> prefixop_to_expr name [y]) })
 postfix name       = Postfix (do{ reservedOp name; return (\y -> op_to_expr name [y]) })
+binFunc name assoc = Infix (do{ reserved name; return (\x y -> (Application . Datatype . Atom) name [x,y])}) assoc
 
 primitive :: CharParser st Datatype
 primitive =
@@ -78,7 +80,7 @@ expr =
 
 appHead :: GenParser Char st Expression
 appHead = 
-    try (parens lambda) 
+    (parens lambda) 
     <|> (fun >>= return . Datatype)
     <|> (prefixOp >>= return . Datatype . Operator)
     <|> (varId >>= return . Variable)

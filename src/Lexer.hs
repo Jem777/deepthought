@@ -18,9 +18,7 @@ languageDef
     , P.identLetter    = alphaNum <|> char '_'
     , P.opStart        = oneOf ":!#$%&*+./<=>?\\^|-~"
     , P.opLetter       = oneOf ":!#$%&*+./<=>?\\^|-~"
-    , P.reservedOpNames= ["::","..","=","\\","|"
-                       ,"<-","->","@","~"
-                       ]
+    , P.reservedOpNames= ["::","..","=","\\","|","<-","->","~"]
     , P.reservedNames  = ["let","in","case","of"
                        ,"if","then","else"
                        ,"data","type"
@@ -29,7 +27,7 @@ languageDef
                        ,"instance","do"
                        ,"newtype"
                        ,"primitive", 
-                       "module","import", "export", 
+                       "module","import", "export", "compile",
                        "where", "when"
                        ]          
     , P.caseSensitive  = True                                   
