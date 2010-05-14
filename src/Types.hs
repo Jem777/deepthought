@@ -13,6 +13,7 @@ data Datatype = --primitve datatypes and lists and tupels
             | String String
             | Char Char
             | Atom String
+            | Fun String
             | Operator String
             deriving (Show, Eq)
 

@@ -38,6 +38,7 @@ primitive =
     <|> chr
     <|> str
     <|> atom
+    <|> fun
     <?> "primitive" 
 
 pattern :: CharParser st Expression
@@ -93,7 +94,7 @@ lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 (varId >>= return . Variabl
 
 -- some really trivial functions
 
-fun = funcId >>= return . Atom
+fun = funcId >>= return . Fun
 atom = atomId >>= return . Atom
 bool = boolId >>= return . Atom
 str = stringLiteral >>= return . String 
