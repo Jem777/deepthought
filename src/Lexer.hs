@@ -60,12 +60,7 @@ float       = P.float lexer
 lowerId = P.identifier lexer
 upperId :: GenParser Char st [Char]
 upperId = (:) <$> upper <*> ((many $ alphaNum <|> char '_') <* whiteSpace)
-{-upperId = do
-    x <- upper 
-    xs <- many (alphaNum <|> char '_')
-    whiteSpace
-    return (x:xs)
--}
+
 boolId = 
     ((reserved "true") >> return "true") 
     <|> ((reserved "false") >> return "false")

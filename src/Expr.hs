@@ -64,15 +64,15 @@ listconstructor =
             )
 -}
 expression :: GenParser Char st Expression
-expression = 
+expression =
     try application
     <|> try (buildExpressionParser table expr)
-    <|> try (parens lambda) 
+    <|> try (parens lambda)
     <|> expr
 
-expr = 
+expr =
     try (parens expression)
-    <|> (primitive >>= return . Datatype) 
+    <|> (primitive >>= return . Datatype)
     <|> (list expression >>= return . Datatype)
     <|> (tupel expression >>= return . Datatype)
     <|> (varId >>= return . Variable)
@@ -80,7 +80,7 @@ expr =
 
 appHead :: GenParser Char st Expression
 appHead = 
-    (parens lambda) 
+    (parens (lambda <|> expression))
     <|> (fun >>= return . Datatype)
     <|> (prefixOp >>= return . Datatype . Operator)
     <|> (varId >>= return . Variable)
