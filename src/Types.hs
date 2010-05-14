@@ -26,9 +26,12 @@ data Expression = -- everything that evals to an datatype
             | Wildcard
             deriving (Show, Eq)
 
+data TreeObject = Expression (Integer, Integer) String Expression
+
 data Tree = Tree String [String] [String] [([String], String)] [Expression] -- modname, compileflags, exports, imports, functions
             deriving (Show, Eq)
 
+newtype CompileError = CompileError String deriving (Show, Eq)
 
 treeName (Tree a _ _ _ _) = a
 treeCompile (Tree _ a _ _ _) = a
@@ -50,3 +53,10 @@ datatype (Datatype a) = a
 
 atomName (Atom a) = a
 opName (Operator a) = a
+
+isList (List _) = True
+isList _ = False
+isTupel (Tupel _) = True
+isTupel _ = False
+isVar (Variable _) = True
+isVar _ = False
