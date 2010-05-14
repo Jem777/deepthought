@@ -14,16 +14,16 @@ import Lexer
 import Types 
 import Expr
 
-parseAll = parse deepthought ""
+parser = parseFromFile deepthought
 
-testParse y z = f (parse y "" z)
+testParse = f . (parse deepthought "")
         where
             f (Right x) = show x
             f (Left x) = show x
 
 deepthought :: GenParser Char st Tree
-deepthought = f <$> (whiteSpace *> parseModule) <*> many parseExport <*> many parseImport <*> ((many function) <* eof)
-        where f a b = Tree a (concat b)
+deepthought = f <$> (whiteSpace *> parseModule) <*> many parseCompile <*> many parseExport <*> many parseImport <*> ((many function) <* eof)
+        where f a b c = Tree a (concat b) (concat c)
 
 parseModule = (reserved "module") >> moduleId
 
@@ -42,6 +42,9 @@ parseCompile = reserved "compile" >> squares (commaSep funcId)
 function = f <$> (funHead <|> opHead) <*> guard <*> body <*> (funTail <|> closure)
         where f a = Function (fst a) (snd a)
 
+helperFunc = f <$> (funHead <|> opHead) <*> guard <*> body <*> funTail
+        where f a = Function (fst a) (snd a)
+
 funHead = (,) <$> fun <*> many (try pattern)
 
 opHead :: GenParser Char st (Datatype, [Expression])
@@ -53,5 +56,5 @@ body = reservedOp "->" >> expression
 funTail :: GenParser Char st [Expression]
 funTail = semi >> return []
 
-closure = reserved "where" >> (parens (many1 function)) <|> ((function <* semi) >>= return . (:[]))
+closure = reserved "where" >> (parens (many1 helperFunc)) <|> (helperFunc >>= return . (:[]))
 guard = option (Datatype (Atom "true")) (reserved "when" >> expression)

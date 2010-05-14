@@ -26,14 +26,15 @@ data Expression = -- everything that evals to an datatype
             | Wildcard
             deriving (Show, Eq)
 
-data Tree = Tree String [String] [([String], String)] [Expression] -- modname, exports, imports, functions
+data Tree = Tree String [String] [String] [([String], String)] [Expression] -- modname, compileflags, exports, imports, functions
             deriving (Show, Eq)
 
 
-treeName (Tree a _ _ _) = a
-treeExports (Tree _ a _ _) = a
-treeImports (Tree _ _ a _) = a
-treeFuncs (Tree _ _ _ a) = a
+treeName (Tree a _ _ _ _) = a
+treeCompile (Tree _ a _ _ _) = a
+treeExports (Tree _ _ a _ _) = a
+treeImports (Tree _ _ _ a _) = a
+treeFuncs (Tree _ _ _ _ a) = a
 
 varName (Variable a) = a
 appName (Application a _) = a
@@ -48,3 +49,4 @@ funcWhere (Function _ _ _ _ a) = a
 datatype (Datatype a) = a
 
 atomName (Atom a) = a
+opName (Operator a) = a
