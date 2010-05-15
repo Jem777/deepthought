@@ -63,3 +63,10 @@ isTupel (Tupel _) = True
 isTupel _ = False
 isVar (Variable _ _) = True
 isVar _ = False
+
+position (Variable a _) = a
+position (Application a _ _) = a
+position (Lambda a _ _) = a
+position (Function a _ _ _ _ _) = a
+position (Datatype a _) = a
+position Wildcard = undefined
