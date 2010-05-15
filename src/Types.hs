@@ -50,7 +50,7 @@ funcArgs (Function _ a _ _ _) = a
 funcGuard (Function _ _ a _ _) = a
 funcBody (Function _ _ _ a _) = a
 funcWhere (Function _ _ _ _ a) = a
-datatype (Datatype a) = a
+--datatype (Datatype a) = a
 
 atomName (Atom a) = a
 opName (Operator a) = a

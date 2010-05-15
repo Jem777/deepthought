@@ -26,10 +26,10 @@ table   = [
         [binary ">>=" AssocLeft, binary ">>" AssocLeft]
         ]
 
-binary  name assoc = Infix (do{ reservedOp name; return (\x y -> op_to_expr name [x,y])}) assoc
-prefix  name       = Prefix (do{ reservedOp name; return (\y -> prefixop_to_expr name [y]) })
-postfix name       = Postfix (do{ reservedOp name; return (\y -> op_to_expr name [y]) })
-binFunc name assoc = Infix (do{ reserved name; return (\x y -> (Application . Datatype . Atom) name [x,y])}) assoc
+binary  name = Infix (reservedOp name >> return (\x y -> op_to_expr name [x,y]))
+prefix  name = Prefix (reservedOp name >> return (\y -> prefixop_to_expr name [y]))
+postfix name = Postfix (reservedOp name >> return (\y -> op_to_expr name [y]))
+binFunc name = Infix (reserved name >> return (\x y -> (Application . Datatype . Atom) name [x,y]))
 
 primitive :: CharParser st Datatype
 primitive =
@@ -44,11 +44,11 @@ primitive =
 pattern :: CharParser st Expression
 pattern = 
         (parens listconstructor)
-    <|> (primitive >>= return . Datatype) 
-    <|> (varId >>= return . Variable)
+    <|> datatype primitive 
+    <|> var
     <|> (wildcard >> return Wildcard)
-    <|> (list pattern >>= return . Datatype)
-    <|> (tupel pattern >>= return . Datatype)
+    <|> datatype (list pattern)
+    <|> datatype (tupel pattern)
     <?> "pattern"
 
 listconstructor = 
@@ -73,38 +73,44 @@ expression =
 
 expr =
     try (parens expression)
-    <|> (primitive >>= return . Datatype)
-    <|> (list expression >>= return . Datatype)
-    <|> (tupel expression >>= return . Datatype)
-    <|> (varId >>= return . Variable)
+    <|> datatype primitive
+    <|> datatype (list expression)--(list expression >>= return . Datatype)
+    <|> datatype (tupel expression)--(tupel expression >>= return . Datatype)
+    <|> var
     <?> "expression"
 
 appHead :: GenParser Char st Expression
 appHead = 
     (parens (lambda <|> expression))
-    <|> (fun >>= return . Datatype)
-    <|> (prefixOp >>= return . Datatype . Operator)
-    <|> (varId >>= return . Variable)
+    <|> datatype fun
+    <|> datatype prefixOp
+    <|> var
 
 application :: GenParser Char st Expression
-application = Application <$> appHead <*> (many1 (try (fun >>= return . Datatype) <|> expr))
+application = Application <$> appHead <*> (many1 ((datatype fun) <|> expr))
 
 lambda :: CharParser st Expression
-lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 (varId >>= return . Variable))) <*> ((reservedOp "->") *> expression)
+lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 var)) <*> ((reservedOp "->") *> expression)
 
 -- some really trivial functions
 
-fun = funcId >>= return . Fun
-atom = atomId >>= return . Atom
-bool = boolId >>= return . Atom
-str = stringLiteral >>= return . String 
-number = natural >>= return . Number
-double = float >>= return . Float
-chr = charLiteral >>= return . Char
-op = operator >>= return . Operator
+fun = Fun <$> funcId 
+atom = Atom <$> atomId 
+bool = Atom <$> boolId 
+str = String <$> stringLiteral 
+number = Number <$> natural
+double = Float <$> float
+chr = Char <$> charLiteral
+op = Operator <$> operator
+prefixOp = Operator <$> prefixOperator
 
-list x = squares (commaSep x) >>= return . List
-tupel x = parens (commaSep x) >>= return . Tupel
+list x = List <$> squares (commaSep x)
+tupel x = Tupel <$> parens (commaSep x)
+
+var = Variable <$> varId
+datatype x = Datatype <$> x
+
+-- fmap rules
 
 -- internal functions
 
