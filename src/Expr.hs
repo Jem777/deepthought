@@ -68,7 +68,7 @@ expression :: GenParser Char st Expression
 expression =
     try application
     <|> try (buildExpressionParser table expr)
-    <|> try (parens lambda)
+    <|> lambda
     <|> expr
 
 expr =
@@ -81,7 +81,7 @@ expr =
 
 appHead :: GenParser Char st Expression
 appHead = 
-    (parens (lambda <|> expression))
+    (parens expression)
     <|> datatype fun
     <|> datatype prefixOp
     <|> var
