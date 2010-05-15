@@ -1,6 +1,8 @@
 module Types
     where
 
+import Text.ParserCombinators.Parsec.Pos
+
 --
 -- definition of all necessary types for parsing
 -- and types for an intermediate byte-code
@@ -18,12 +20,12 @@ data Datatype = --primitve datatypes and lists and tupels
             deriving (Show, Eq)
 
 data Expression = -- everything that evals to an datatype
-            Variable [Char]
-            | Application Expression [Expression]
+            Variable SourcePos [Char]
+            | Application SourcePos Expression [Expression]
             -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
-            | Lambda [Expression] Expression --[Expr] are the arguments, Expr is the Body
-            | Function Datatype [Expression] Expression Expression [Expression] --first is the ident, second the args, third the guard, fourth the body, fifth closures
-            | Datatype Datatype
+            | Lambda SourcePos [Expression] Expression --[Expr] are the arguments, Expr is the Body
+            | Function SourcePos Datatype [Expression] Expression Expression [Expression] --first is the ident, second the args, third the guard, fourth the body, fifth closures
+            | Datatype SourcePos Datatype
             | Wildcard
             deriving (Show, Eq)
 
@@ -40,16 +42,16 @@ treeExports (Tree _ _ a _ _) = a
 treeImports (Tree _ _ _ a _) = a
 treeFuncs (Tree _ _ _ _ a) = a
 
-varName (Variable a) = a
-appName (Application a _) = a
-appArgs (Application _ a) = a
-lambdaArgs (Lambda a _) = a
-lambdaBody (Lambda _ a) = a
-funcName (Function a _ _ _ _) = a
-funcArgs (Function _ a _ _ _) = a
-funcGuard (Function _ _ a _ _) = a
-funcBody (Function _ _ _ a _) = a
-funcWhere (Function _ _ _ _ a) = a
+varName (Variable _ a) = a
+appName (Application _ a _) = a
+appArgs (Application _ _ a) = a
+lambdaArgs (Lambda _ a _) = a
+lambdaBody (Lambda _ _ a) = a
+funcName (Function _ a _ _ _ _) = a
+funcArgs (Function _ _ a _ _ _) = a
+funcGuard (Function _ _ _ a _ _) = a
+funcBody (Function _ _ _ _ a _) = a
+funcWhere (Function _ _ _ _ _ a) = a
 --datatype (Datatype a) = a
 
 atomName (Atom a) = a
@@ -59,5 +61,5 @@ isList (List _) = True
 isList _ = False
 isTupel (Tupel _) = True
 isTupel _ = False
-isVar (Variable _) = True
+isVar (Variable _ _) = True
 isVar _ = False

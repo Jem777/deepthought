@@ -39,11 +39,11 @@ parseExport = reserved "export" >> squares (commaSep funcId)
 parseCompile :: GenParser Char st [String]
 parseCompile = reserved "compile" >> squares (commaSep funcId)
 
-function = f <$> (funHead <|> opHead) <*> guard <*> body <*> (funTail <|> closure)
-        where f a = Function (fst a) (snd a)
+function = f <$> getPosition <*> (funHead <|> opHead) <*> guard <*> body <*> (funTail <|> closure)
+        where f a b = Function a (fst b) (snd b)
 
-helperFunc = f <$> (funHead <|> opHead) <*> guard <*> body <*> funTail
-        where f a = Function (fst a) (snd a)
+helperFunc = f <$> getPosition <*> (funHead <|> opHead) <*> guard <*> body <*> funTail
+        where f a b = Function a (fst b) (snd b)
 
 funHead = (,) <$> fun <*> many (try pattern)
 
@@ -57,4 +57,4 @@ funTail :: GenParser Char st [Expression]
 funTail = semi >> return []
 
 closure = reserved "where" >> (parens (many1 helperFunc)) <|> (helperFunc >>= return . (:[]))
-guard = option (Datatype (Atom "true")) (reserved "when" >> expression)
+guard = option Wildcard (reserved "when" >> expression)

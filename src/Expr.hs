@@ -26,10 +26,12 @@ table   = [
         [binary ">>=" AssocLeft, binary ">>" AssocLeft]
         ]
 
-binary  name = Infix (reservedOp name >> return (\x y -> op_to_expr name [x,y]))
-prefix  name = Prefix (reservedOp name >> return (\y -> prefixop_to_expr name [y]))
-postfix name = Postfix (reservedOp name >> return (\y -> op_to_expr name [y]))
-binFunc name = Infix (reserved name >> return (\x y -> (Application . Datatype . Atom) name [x,y]))
+binary  name = Infix (posOp name >>= (\p -> return (\x y -> op_to_expr p name [x,y])))
+prefix  name = Prefix (posOp name >>= (\p -> return (\y -> prefixop_to_expr p name [y])))
+postfix name = Postfix (posOp name >>= (\p -> return (\y -> op_to_expr p name [y])))
+--binFunc name = Infix (reserved name >> return (\x y -> (Application . Datatype . Atom) name [x,y]))
+
+posOp name = getPosition <* (reservedOp name)
 
 primitive :: CharParser st Datatype
 primitive =
@@ -51,10 +53,13 @@ pattern =
     <|> datatype (tupel pattern)
     <?> "pattern"
 
+listconstructor = f <$> getPosition <*> colonSep pattern
+        where f x = Application x (Datatype x (Operator ":"))
+{-
 listconstructor = 
     colonSep pattern >>= 
     return . (Application (Datatype (Operator ":")))
-
+-}
 {-listcomprehension = 
     squares (
             do 
@@ -87,10 +92,10 @@ appHead =
     <|> var
 
 application :: GenParser Char st Expression
-application = Application <$> appHead <*> (many1 ((datatype fun) <|> expr))
+application = Application <$> getPosition <*> appHead <*> (many1 ((datatype fun) <|> expr))
 
 lambda :: CharParser st Expression
-lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 var)) <*> ((reservedOp "->") *> expression)
+lambda = Lambda <$> ((reservedOp "\\") *> getPosition) <*> (commaSep1 var) <*> ((reservedOp "->") *> expression)
 
 -- some really trivial functions
 
@@ -107,18 +112,18 @@ prefixOp = Operator <$> prefixOperator
 list x = List <$> squares (commaSep x)
 tupel x = Tupel <$> parens (commaSep x)
 
-var = Variable <$> varId
-datatype x = Datatype <$> x
+var = Variable <$> getPosition <*> varId
+datatype x = Datatype <$> getPosition <*> x
 
 -- fmap rules
 
 -- internal functions
 
-op_to_expr :: String -> [Expression] -> Expression
-op_to_expr = Application . Datatype . Operator
+op_to_expr :: SourcePos -> String -> [Expression] -> Expression
+op_to_expr pos name = Application pos (Datatype pos (Operator name))
 
-prefixop_to_expr :: String -> [Expression] -> Expression
-prefixop_to_expr = Application . Datatype . convert
+prefixop_to_expr :: SourcePos -> String -> [Expression] -> Expression
+prefixop_to_expr pos name = Application pos (Datatype pos (convert name))
     where
     convert "+" = Atom "id"
     convert "-" = Atom "neg"
