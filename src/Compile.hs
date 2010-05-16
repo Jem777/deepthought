@@ -11,10 +11,8 @@ parse fname g = parser fname >>= return . f
         f (Right x) = show (g x) 
 
 getFunctionNames :: [Expression] -> Maybe [String]
-getFunctionNames = (f []) . (map (g . funcName))
+getFunctionNames = (f []) . (map (header . funcName))
         where
-        g (Atom n) = n
-        g (Operator n) = n
         f outp [] = Just (reverse outp)
         f [] (x:xs) = f [x] xs
         f (y:ys) (x:xs) | elem x ys = Nothing
@@ -22,9 +20,11 @@ getFunctionNames = (f []) . (map (g . funcName))
                         | otherwise = f (x:y:ys) xs
 
 variablesBound :: Expression -> [String] -> Bool
-variablesBound func listOfGlobals = isInfixOf (f func) ((filtermap isVar varName (funcArgs func)) ++ listOfGlobals)
+variablesBound func listOfGlobals = isInfixOf (f (funcBody func)) ((filtermap isVar varName (funcArgs func)) ++ listOfGlobals)
         where
         f _ = []
+
+
 
 -- internal functions
 

@@ -15,16 +15,17 @@ data Datatype = --primitve datatypes and lists and tupels
             | String String
             | Char Char
             | Atom String
-            | Fun String
-            | Operator String
             deriving (Show, Eq)
 
 data Expression = -- everything that evals to an datatype
-            Variable SourcePos [Char]
+            Variable SourcePos String
+            | Fun SourcePos String
+            | Operator SourcePos String
             | Application SourcePos Expression [Expression]
             -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
             | Lambda SourcePos [Expression] Expression --[Expr] are the arguments, Expr is the Body
-            | Function SourcePos Datatype [Expression] Expression Expression [Expression] --first is the ident, second the args, third the guard, fourth the body, fifth closures
+            | Function SourcePos Expression [Expression] Expression Expression [Expression] 
+            --first is the ident, second the args, third the guard, fourth the body, fifth closures
             | Datatype SourcePos Datatype
             | Wildcard
             deriving (Show, Eq)
@@ -52,10 +53,9 @@ funcArgs (Function _ _ a _ _ _) = a
 funcGuard (Function _ _ _ a _ _) = a
 funcBody (Function _ _ _ _ a _) = a
 funcWhere (Function _ _ _ _ _ a) = a
+opName (Operator _ a) = a
+funName (Fun _ a) = a
 --datatype (Datatype a) = a
-
-atomName (Atom a) = a
-opName (Operator a) = a
 
 isList (List _) = True
 isList _ = False
@@ -63,7 +63,14 @@ isTupel (Tupel _) = True
 isTupel _ = False
 isVar (Variable _ _) = True
 isVar _ = False
+isFun (Fun _ _) = True
+isFun _ = False
 
+header (Operator _ a) = a
+header (Fun _ a) = a
+
+position (Fun a _) = a
+position (Operator a _) = a
 position (Variable a _) = a
 position (Application a _ _) = a
 position (Lambda a _ _) = a

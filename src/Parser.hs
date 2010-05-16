@@ -8,6 +8,8 @@ module Parser
 -- Parsing TODOs:
 -- list comprehention
 -- maybe better import
+-- module::function parsing
+-- dynamic operatortable
 
 import ApplicativeParsec
 import Lexer 
@@ -39,15 +41,15 @@ parseExport = reserved "export" >> squares (commaSep funcId)
 parseCompile :: GenParser Char st [String]
 parseCompile = reserved "compile" >> squares (commaSep funcId)
 
-function = f <$> getPosition <*> (funHead <|> opHead) <*> guard <*> body <*> (funTail <|> closure)
+funBody x = f <$> getPosition <*> (funHead <|> opHead) <*> guard <*> body <*> x
         where f a b = Function a (fst b) (snd b)
 
-helperFunc = f <$> getPosition <*> (funHead <|> opHead) <*> guard <*> body <*> funTail
-        where f a b = Function a (fst b) (snd b)
+function = funBody (funTail <|> closure)
+helperFunc = funBody funTail
 
 funHead = (,) <$> fun <*> many (try pattern)
 
-opHead :: GenParser Char st (Datatype, [Expression])
+opHead :: GenParser Char st (Expression, [Expression])
 opHead = f <$> pattern <*> op <*> many1 (try pattern)
         where f arg ident args = (ident, arg:args)
 
@@ -56,5 +58,5 @@ body = reservedOp "->" >> expression
 funTail :: GenParser Char st [Expression]
 funTail = semi >> return []
 
-closure = reserved "where" >> (parens (many1 helperFunc)) <|> (helperFunc >>= return . (:[]))
+closure = reserved "where" >> (parens (many1 helperFunc)) <|> ((:[]) <$> helperFunc)
 guard = option Wildcard (reserved "when" >> expression)

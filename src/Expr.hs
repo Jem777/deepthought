@@ -2,7 +2,8 @@ module Expr
     where
 
 --
--- datatypes and some functions to parse and output them
+-- datatypes and expressions 
+-- and some functions to parse and output them
 --
 
 import Lexer
@@ -29,7 +30,8 @@ table   = [
 binary  name = Infix (posOp name >>= (\p -> return (\x y -> op_to_expr p name [x,y])))
 prefix  name = Prefix (posOp name >>= (\p -> return (\y -> prefixop_to_expr p name [y])))
 postfix name = Postfix (posOp name >>= (\p -> return (\y -> op_to_expr p name [y])))
---binFunc name = Infix (reserved name >> return (\x y -> (Application . Datatype . Atom) name [x,y]))
+binFunc name = Infix (f >>= (\p -> return (\x y -> (Application p (Fun p name) [x,y]))))
+        where f = getPosition <* (reservedOp name)
 
 posOp name = getPosition <* (reservedOp name)
 
@@ -40,7 +42,6 @@ primitive =
     <|> chr
     <|> str
     <|> atom
-    <|> fun
     <?> "primitive" 
 
 pattern :: CharParser st Expression
@@ -54,21 +55,19 @@ pattern =
     <?> "pattern"
 
 listconstructor = f <$> getPosition <*> colonSep pattern
-        where f x = Application x (Datatype x (Operator ":"))
-{-
-listconstructor = 
-    colonSep pattern >>= 
-    return . (Application (Datatype (Operator ":")))
--}
+        where f x = Application x (Operator x ":")
+
 {-listcomprehension = 
     squares (
             do 
             patr <- pattern
             reservedOp "|"
-            compr <- (commaSep1 expression)
+            vars <- (commaSep1 (var <* reservedOp "<-" list))
+            compr <- (commaSep expression)
             return (ListComp patr compr)
             )
 -}
+
 expression :: GenParser Char st Expression
 expression =
     try application
@@ -79,39 +78,43 @@ expression =
 expr =
     try (parens expression)
     <|> datatype primitive
-    <|> datatype (list expression)--(list expression >>= return . Datatype)
-    <|> datatype (tupel expression)--(tupel expression >>= return . Datatype)
+    <|> datatype (list expression)
+    <|> datatype (tupel expression)
     <|> var
+    <|> fun
+    <|> prefixOp
     <?> "expression"
 
 appHead :: GenParser Char st Expression
 appHead = 
     (parens expression)
-    <|> datatype fun
-    <|> datatype prefixOp
     <|> var
+    <|> fun
+    <|> prefixOp
 
 application :: GenParser Char st Expression
-application = Application <$> getPosition <*> appHead <*> (many1 ((datatype fun) <|> expr))
+application = Application <$> getPosition <*> appHead <*> (many1 (fun <|> expr))
 
 lambda :: CharParser st Expression
 lambda = Lambda <$> ((reservedOp "\\") *> getPosition) <*> (commaSep1 var) <*> ((reservedOp "->") *> expression)
 
 -- some really trivial functions
 
-fun = Fun <$> funcId 
+-- datatypes
 atom = Atom <$> atomId 
 bool = Atom <$> boolId 
 str = String <$> stringLiteral 
 number = Number <$> natural
 double = Float <$> float
 chr = Char <$> charLiteral
-op = Operator <$> operator
-prefixOp = Operator <$> prefixOperator
 
 list x = List <$> squares (commaSep x)
 tupel x = Tupel <$> parens (commaSep x)
 
+-- expressions
+fun = Fun <$> getPosition <*> funcId 
+op = Operator <$> getPosition <*> operator
+prefixOp = Operator <$> getPosition <*> prefixOperator
 var = Variable <$> getPosition <*> varId
 datatype x = Datatype <$> getPosition <*> x
 
@@ -120,12 +123,12 @@ datatype x = Datatype <$> getPosition <*> x
 -- internal functions
 
 op_to_expr :: SourcePos -> String -> [Expression] -> Expression
-op_to_expr pos name = Application pos (Datatype pos (Operator name))
+op_to_expr pos name = Application pos (Operator pos name)
 
 prefixop_to_expr :: SourcePos -> String -> [Expression] -> Expression
-prefixop_to_expr pos name = Application pos (Datatype pos (convert name))
+prefixop_to_expr pos name = Application pos (convert name)
     where
-    convert "+" = Atom "id"
-    convert "-" = Atom "neg"
-    convert x = Operator x
+    convert "+" = Fun pos "id"
+    convert "-" = Fun pos "neg"
+    convert x = Operator pos x
 
