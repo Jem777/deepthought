@@ -12,6 +12,7 @@ module Parser
 -- dynamic operatortable
 
 import ApplicativeParsec
+import Text.ParserCombinators.Parsec.Error
 import Lexer 
 import Types 
 import Expr
@@ -22,6 +23,15 @@ testParse = f . (parse deepthought "")
         where
             f (Right x) = show x
             f (Left x) = show x
+
+formatError a = CompileError 
+        "SyntaxError" 
+        (errorPos a) 
+        (showErrorMessages 
+                "or" "unknown parse error" 
+                "expecting" "unexpected" 
+                "end of input" (errorMessages a)
+                )
 
 deepthought :: GenParser Char st Tree
 deepthought = f <$> (whiteSpace *> parseModule) <*> many parseCompile <*> many parseExport <*> many parseImport <*> ((many function) <* eof)

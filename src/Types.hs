@@ -35,7 +35,11 @@ data TreeObject = Expression (Integer, Integer) String Expression
 data Tree = Tree String [String] [String] [([String], String)] [Expression] -- modname, compileflags, exports, imports, functions
             deriving (Show, Eq)
 
-newtype CompileError = CompileError String deriving (Show, Eq)
+data CompileError = CompileError String SourcePos String --kind of Error, SourcePos, Message
+
+instance Show CompileError where
+    show (CompileError a b c) = a ++ " at " ++ show b ++ ":\n" ++ c
+
 
 treeName (Tree a _ _ _ _) = a
 treeCompile (Tree _ a _ _ _) = a
@@ -65,9 +69,21 @@ isVar (Variable _ _) = True
 isVar _ = False
 isFun (Fun _ _) = True
 isFun _ = False
+isOp (Operator _ _) = True
+isOp _ = False
+isApp (Application _ _ _) = True
+isApp _ = False
+isLambda (Lambda _ _ _) = True
+isLambda _ = False
+isFunction (Function _ _ _ _ _ _) = True
+isFunction _ = False
+isDatatype (Datatype _ _) = True
+isDatatype _ = False
+isWildcard Wildcard = True
+isWildcard _ = False
 
-header (Operator _ a) = a
-header (Fun _ a) = a
+value (Operator _ a) = a
+value (Fun _ a) = a
 
 position (Fun a _) = a
 position (Operator a _) = a
