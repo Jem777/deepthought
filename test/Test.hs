@@ -4,9 +4,10 @@ import Test.HUnit
 import Parser
 import Expr
 import Types
+import Data.Either
 
 
-parser = genList (combine listComplex listPrimitive)
+parserTests = genList (combine listComplex listPrimitive)
 
 --------------------
 -- Parser testing --
@@ -19,10 +20,10 @@ parser = genList (combine listComplex listPrimitive)
 -- right parsing
 
 
-genList (f, l) = TestList (map (\(a, b, c) -> (TestCase (assertEqual a (show b) (testParse f c)))) l)
+genList (f, l) = TestList (map (\(a, b, c) -> (TestCase (assertEqual a (Right b) (testParse f c)))) l)
 
 listExpression = (expression, [
-        ("Expression", (Lambda [Variable "Bar"] (Datatype (Number 3))), "(\\Bar -> 3)")
+        ("Expression", (Lambda testEmptyPos [Variable testEmptyPos "Bar"] (Datatype testEmptyPos (Number 3))), "(\\Bar -> 3)")
         ])
 
 combine a b = (fst a, [(x y) | x <- (snd a), y <- (snd b)])
@@ -30,10 +31,10 @@ combine a b = (fst a, [(x y) | x <- (snd a), y <- (snd b)])
 listFunction = (function, [])
 
 listComplex = (expression, [
-        (\(n, a, b) -> ("Lambda /w " ++ n, (Lambda [Variable "Bar"] (Datatype a)), "(\\Bar -> " ++ b ++ ")")),
-        (\(n, a, b) -> ("Application /w " ++ n, (Application (Datatype (Atom "bar")) [Datatype a]), "bar " ++ b)),
-        (\(n, a, b) -> ("Operation (+)/w " ++ n, (Application (Datatype (Operator "+")) [(Datatype (Number 2)), (Datatype a)]), "2 + " ++ b)),
-        (\(n, a, b) -> ("Operation (*)/w " ++ n, (Application (Datatype (Operator "*")) [(Datatype a), (Datatype a)]), b ++ "*" ++ b))
+        (\(n, a, b) -> ("Lambda /w " ++ n, (Lambda testEmptyPos [Variable testEmptyPos "Bar"] (Datatype testEmptyPos a)), "(\\Bar -> " ++ b ++ ")")),
+        (\(n, a, b) -> ("Application /w " ++ n, (Application testEmptyPos (Fun testEmptyPos "bar") [Datatype testEmptyPos a]), "bar " ++ b)),
+        (\(n, a, b) -> ("Operation (+)/w " ++ n, (Application testEmptyPos (Operator testEmptyPos "+") [(Datatype testEmptyPos (Number 2)), (Datatype testEmptyPos a)]), "2 + " ++ b)),
+        (\(n, a, b) -> ("Operation (*)/w " ++ n, (Application testEmptyPos (Operator testEmptyPos "*") [(Datatype testEmptyPos a), (Datatype testEmptyPos a)]), b ++ "*" ++ b))
         ])
 
 listPrimitive = (primitive, [

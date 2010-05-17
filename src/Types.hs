@@ -28,7 +28,7 @@ data Expression = -- everything that evals to an datatype
             --first is the ident, second the args, third the guard, fourth the body, fifth closures
             | Datatype SourcePos Datatype
             | Wildcard
-            deriving (Show, Eq)
+            deriving (Show)
 
 data TreeObject = Expression (Integer, Integer) String Expression
 
@@ -37,9 +37,29 @@ data Tree = Tree String [String] [String] [([String], String)] [Expression] -- m
 
 data CompileError = CompileError String SourcePos String --kind of Error, SourcePos, Message
 
+
+-- instances for the types -  SourcePos is irrelevant to equalency
+
 instance Show CompileError where
     show (CompileError a b c) = a ++ " at " ++ show b ++ ":\n" ++ c
 
+instance Eq CompileError where
+    (CompileError a _ c) == (CompileError a' _ c') = (a == a' && c == c')
+
+instance Eq Expression where
+    (Variable _ a) == (Variable _ b) = a == b
+    (Fun _ a) == (Fun _ b) = a == b
+    (Operator _ a) == (Operator _ b) = a == b
+    (Application _ a b) == (Application _ a' b') = a == a' && b == b'
+    (Lambda _ a b) == (Lambda _ a' b') = a == a' && b == b'
+    (Function _ a b c d e) == (Function _ a' b' c' d' e') = a == a' && b == b' && c == c' && d == d' && e == e'
+    (Datatype _ a) == (Datatype _ b) = a == b
+    Wildcard == Wildcard = True
+    _ == _ = False
+
+
+
+-- a lot of trivial functions for using the types
 
 treeName (Tree a _ _ _ _) = a
 treeCompile (Tree _ a _ _ _) = a

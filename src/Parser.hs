@@ -13,17 +13,21 @@ module Parser
 
 import ApplicativeParsec
 import Text.ParserCombinators.Parsec.Error
+import Text.ParserCombinators.Parsec.Pos (newPos)
 import Lexer 
 import Types 
 import Expr
 
 parser = parseFromFile deepthought
 
-testParse = f . (parse deepthought "")
-        where
-            f (Right x) = show x
-            f (Left x) = show x
+testParse x y = f (parse x "" y)
+    where
+    f (Left a) = Left (formatError a)
+    f (Right x) = (Right x)
 
+testEmptyPos = newPos "" 0 0
+
+formatError :: ParseError -> CompileError
 formatError a = CompileError 
         "SyntaxError" 
         (errorPos a) 
