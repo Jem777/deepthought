@@ -5,6 +5,13 @@ import Parser
 
 import Data.List
 
+-- this module checks whether the semantics are correct
+--
+-- all variables and functions bound
+-- return warning on unused functions/variables
+-- all exported functions in the module
+-- no double assignment of functions/variables
+
 parse fname g = parser fname >>= return . f
     where 
         f (Left err) = show err
@@ -22,6 +29,12 @@ getFunctionNames l = (f l) . (map funcName)
                         | (value x) == y = f (y:ys) xs
                         | otherwise = f ((value x):y:ys) xs 
 
+--unusedVariables :: Expression -> Either CompileError [String]
+--unusedVariables func = (funcBody func) (getVarArgs func)
+
+getVarArgs :: Expression -> [String]
+getVarArgs func = filtermap isVar varName (funcArgs func)
+
 {-
 variablesBound :: Expression -> [String] -> Bool
 variablesBound func listOfGlobals = isInfixOf (f (funcBody func)) ((filtermap isVar varName (funcArgs func)) ++ listOfGlobals)
@@ -33,14 +46,14 @@ functionsBound x y = False
 -}
 
 -- inputs are: global functions (may change type to [Expression]), exports and expression to check
-usedFunctions :: [String] -> [String] -> Expression -> Either CompileError [Expression]
+{-usedFunctions :: [String] -> [String] -> Expression -> Either CompileError [Expression]
 usedFunctions glob exp expr 
             | (isApp expr) = 
             where
             f | elem (value (appName expr)) glob = 
             -- | (isVar expr) = Right []
             -- | (isFun expr) = (value expr)
-
+-}
 -- internal functions
 
 filtermap _ _ [] = []
