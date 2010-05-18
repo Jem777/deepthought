@@ -102,6 +102,11 @@ isDatatype _ = False
 isWildcard Wildcard = True
 isWildcard _ = False
 
+args (Lambda _ a _) = a
+args (Function _ _ a _ _ _) = a
+body (Lambda _ _ a) = a
+body (Function _ _ _ _ a _) = a
+
 value (Operator _ a) = a
 value (Fun _ a) = a
 
