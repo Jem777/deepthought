@@ -55,7 +55,7 @@ parseExport = reserved "export" >> squares (commaSep funcId)
 parseCompile :: GenParser Char st [String]
 parseCompile = reserved "compile" >> squares (commaSep funcId)
 
-funBody x = f <$> getPosition <*> (funHead <|> opHead) <*> guard <*> body <*> x
+funBody x = f <$> getPosition <*> (funHead <|> opHead) <*> guard <*> (reservedOp "->" >> expression) <*> x
         where f a b = Function a (fst b) (snd b)
 
 function = funBody (funTail <|> closure)
@@ -66,8 +66,6 @@ funHead = (,) <$> fun <*> many (try pattern)
 opHead :: GenParser Char st (Expression, [Expression])
 opHead = f <$> pattern <*> op <*> many1 (try pattern)
         where f arg ident args = (ident, arg:args)
-
-body = reservedOp "->" >> expression 
 
 funTail :: GenParser Char st [Expression]
 funTail = semi >> return []
