@@ -17,8 +17,6 @@ parse fname g = parser fname >>= return . f
         f (Left err) = show err
         f (Right x) = show (g x) 
 
---probably it later changes to [Expression] -> [Expression] -> Either CompileError [Expression]
---because it handles functions not just strings
 --first argument are global funs and operators, second list of local functions
 getFunctionNames :: [Expression] -> [Expression] -> Either CompileError [Expression]
 getFunctionNames l = (f l) . (map funcName)
@@ -104,15 +102,7 @@ getFunc allowed exp
         g _ (Left x) = Left x
         g (Right x) (Right y) = Right (intersect x y)
 
--- inputs are: global functions (may change type to [Expression]), exports and expression to check
-{-usedFunctions :: [String] -> [String] -> Expression -> Either CompileError [Expression]
-usedFunctions glob exp expr 
-            | (isApp expr) = 
-            where
-            f | elem (value (appName expr)) glob = 
-            -- | (isVar expr) = Right []
-            -- | (isFun expr) = (value expr)
--}
+
 -- internal functions
 
 equal x y = any (\z -> notElem z x) y
