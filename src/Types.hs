@@ -79,7 +79,7 @@ funcBody (Function _ _ _ _ a _) = a
 funcWhere (Function _ _ _ _ _ a) = a
 opName (Operator _ a) = a
 funName (Fun _ a) = a
---datatype (Datatype a) = a
+dataType (Datatype _ a) = a
 
 isList (List _) = True
 isList _ = False
@@ -106,6 +106,9 @@ args (Lambda _ a _) = a
 args (Function _ _ a _ _ _) = a
 body (Lambda _ _ a) = a
 body (Function _ _ _ _ a _) = a
+
+listValue (List a) = a
+tupelValue (Tupel a) = a
 
 value (Operator _ a) = a
 value (Fun _ a) = a

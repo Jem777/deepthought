@@ -41,7 +41,9 @@ getVars allowed exp
         | (isVar exp) && (elem exp allowed) = Right [exp]
         | (isVar exp) = Left (CompileError "Variable unbound" (position exp) "barbaz")
         | (isApp exp) = (eitherFold f) (map (\y -> getVars allowed y) (appArgs exp))
-        -- tupels, lists, lambdas and functions are missing
+        | (isDatatype exp) && (isTupel (dataType exp)) = (eitherFold f) (map (\y -> getVars allowed y) (tupelValue (dataType exp)))
+        | (isDatatype exp) && (isList (dataType exp)) = (eitherFold f) (map (\y -> getVars allowed y) (listValue (dataType exp)))
+        -- lambdas and functions are missing
         | otherwise = Right []
         where
         f x y = Right (union x y)
@@ -59,7 +61,8 @@ getVarArgs allowed exp
         | (isVar exp) && (elem exp allowed) = Left (CompileError "Conflicting Definitions" (position exp) "barbaz")
         | (isVar exp) = Right [exp]
         | (isApp exp) = (eitherFold f) (map (\y -> getVarArgs allowed y) (appArgs exp))
-        -- tupels and lists are missing
+        | (isDatatype exp) && (isTupel (dataType exp)) = (eitherFold f) (map (\y -> getVars allowed y) (tupelValue (dataType exp)))
+        | (isDatatype exp) && (isList (dataType exp)) = (eitherFold f) (map (\y -> getVars allowed y) (listValue (dataType exp)))
         | otherwise = Right []
         where
         f x y | equal x y = Left (CompileError "Conflicting Definitions" (position exp) "barbaz")
