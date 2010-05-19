@@ -77,6 +77,33 @@ getVarArgs allowed exp
         f x y | equal x y = Left (CompileError "Conflicting Definitions" (position exp) "barbaz")
               | otherwise = Right (x ++ y)
 
+checkFunc :: Expression -> Either CompileError [Expression]
+checkFunc f = unusedVars [] f
+
+unusedFunc :: [Expression] -> Expression -> Either CompileError [Expression]
+unusedFunc allowed exp = v f
+        where 
+        f = (foldVarArgs (map (getVarArgs allowed) (args exp)))
+        z (Right x) = x
+        v (Right x) = w (getVars x (body exp))
+        v (Left x) = Left x
+        w (Right x) = Right $ filter (\y -> notElem y (z f)) x
+        w (Left x) = Left x
+
+getFunc :: [Expression] -> Expression -> Either CompileError [Expression]
+getFunc allowed exp 
+        | (isApp exp) = (eitherFold f) (map (\y -> getFunc allowed y) (appArgs exp))
+        | (isDatatype exp) && (isTupel (dataType exp)) = (eitherFold f) (map (\y -> getVars allowed y) (tupelValue (dataType exp)))
+        | (isDatatype exp) && (isList (dataType exp)) = (eitherFold f) (map (\y -> getVars allowed y) (listValue (dataType exp)))
+        | (isLambda exp) = unusedVars allowed exp 
+        | (isFunction exp) = g (unusedVars allowed exp) (eitherFold (\x y -> Right (intersect x y)) $ map (unusedVars allowed) (concatMap args $ funcWhere exp))
+        | otherwise = Right []
+        where
+        f x y = Right (union x y)
+        g (Left x) _ = Left x
+        g _ (Left x) = Left x
+        g (Right x) (Right y) = Right (intersect x y)
+
 -- inputs are: global functions (may change type to [Expression]), exports and expression to check
 {-usedFunctions :: [String] -> [String] -> Expression -> Either CompileError [Expression]
 usedFunctions glob exp expr 
