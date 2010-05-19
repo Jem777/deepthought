@@ -29,11 +29,18 @@ getFunctionNames l = (f l) . (map funcName)
                         | x == y = f (y:ys) xs
                         | otherwise = f (x:y:ys) xs 
 
-unusedVars :: Expression -> Either CompileError [Expression]
-unusedVars func = v (foldVarArgs (map (getVarArgs []) (args func)))
+checkVars :: Expression -> Either CompileError [Expression]
+checkVars f = unusedVars [] f
+
+unusedVars :: [Expression] -> Expression -> Either CompileError [Expression]
+unusedVars allowed exp = v f
         where 
-        v (Right x) = (getVars x (body func))
+        f = (foldVarArgs (map (getVarArgs allowed) (args exp)))
+        z (Right x) = x
+        v (Right x) = w (getVars x (body exp))
         v (Left x) = Left x
+        w (Right x) = Right $ filter (\y -> notElem y (z f)) x
+        w (Left x) = Left x
 
 -- getVars allowedVars expression = usedVars
 getVars :: [Expression] -> Expression -> Either CompileError [Expression]
@@ -43,18 +50,20 @@ getVars allowed exp
         | (isApp exp) = (eitherFold f) (map (\y -> getVars allowed y) (appArgs exp))
         | (isDatatype exp) && (isTupel (dataType exp)) = (eitherFold f) (map (\y -> getVars allowed y) (tupelValue (dataType exp)))
         | (isDatatype exp) && (isList (dataType exp)) = (eitherFold f) (map (\y -> getVars allowed y) (listValue (dataType exp)))
-        -- lambdas and functions are missing
+        | (isLambda exp) = unusedVars allowed exp 
+        | (isFunction exp) = g (unusedVars allowed exp) (eitherFold (\x y -> Right (intersect x y)) $ map (unusedVars allowed) (concatMap args $ funcWhere exp))
         | otherwise = Right []
         where
         f x y = Right (union x y)
-
+        g (Left x) _ = Left x
+        g _ (Left x) = Left x
+        g (Right x) (Right y) = Right (intersect x y)
 
 foldVarArgs :: [Either CompileError [Expression]] -> Either CompileError [Expression]
 foldVarArgs = eitherFold f
         where
         f x y | equal x y = Left (CompileError "Conflicting Definitions" (position (posX x y)) "barbaz")
               | otherwise = Right (x ++ y)
-
 
 getVarArgs :: [Expression] -> Expression -> Either CompileError [Expression]
 getVarArgs allowed exp
