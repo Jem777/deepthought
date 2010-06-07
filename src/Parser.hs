@@ -13,7 +13,6 @@ module Parser
 
 import ApplicativeParsec
 import Text.ParserCombinators.Parsec.Error
-import Text.ParserCombinators.Parsec.Pos (newPos)
 import Lexer 
 import Types 
 import Expr
@@ -24,8 +23,6 @@ testParse x y = f (parse x "" y)
     where
     f (Left a) = Left (formatError a)
     f (Right x) = (Right x)
-
-testEmptyPos = newPos "" 0 0
 
 formatError :: ParseError -> CompileError
 formatError a = CompileError 

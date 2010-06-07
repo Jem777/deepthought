@@ -4,6 +4,8 @@ import Types
 import Parser
 
 import Data.List
+import Data.Either
+
 
 -- this module checks whether the semantics are correct
 --
@@ -28,52 +30,57 @@ getFunctionNames l = (f l) . (map funcName)
                         | otherwise = f (x:y:ys) xs 
 
 checkVars :: Expression -> Either CompileError [Expression]
-checkVars f = unusedVars [] f
+checkVars f = getVars [] f
 
 unusedVars :: [Expression] -> Expression -> Either CompileError [Expression]
-unusedVars allowed exp = v f
+unusedVars allowed exp = unused (rightSide leftSide)
         where 
-        f = (foldVarArgs (map (getVarArgs allowed) (args exp)))
-        z (Right x) = x
-        v (Right x) = w (getVars x (body exp))
-        v (Left x) = Left x
-        w (Right x) = Right $ filter (\y -> notElem y (z f)) x
-        w (Left x) = Left x
+        leftSide = varArgs allowed exp
+        rightSide (Right x) = getVars x (body exp)
+        rightSide (Left x) = Left x
+        unused (Right x) = Right $ filterUnused (right leftSide) x
+        unused (Left x) = Left x
 
 -- getVars allowedVars expression = usedVars
 getVars :: [Expression] -> Expression -> Either CompileError [Expression]
 getVars allowed exp 
         | (isVar exp) && (elem exp allowed) = Right [exp]
         | (isVar exp) = Left (CompileError "Variable unbound" (position exp) "barbaz")
-        | (isApp exp) = (eitherFold f) (map (\y -> getVars allowed y) (appArgs exp))
+        | (isApp exp) = (eitherFold f) $ (getVars allowed (appName exp)) : (map (\y -> getVars allowed y) (appArgs exp))
         | (isDatatype exp) && (isTupel (dataType exp)) = (eitherFold f) (map (\y -> getVars allowed y) (tupelValue (dataType exp)))
         | (isDatatype exp) && (isList (dataType exp)) = (eitherFold f) (map (\y -> getVars allowed y) (listValue (dataType exp)))
         | (isLambda exp) = unusedVars allowed exp 
-        | (isFunction exp) = g (unusedVars allowed exp) (eitherFold (\x y -> Right (intersect x y)) $ map (unusedVars allowed) (concatMap args $ funcWhere exp))
+        | (isFunction exp) = g (unusedVars allowed exp) (eitherFold (\x y -> Right (xor x y)) $ map (unusedVars leftSide) (funcWhere exp))
         | otherwise = Right []
         where
         f x y = Right (union x y)
         g (Left x) _ = Left x
         g _ (Left x) = Left x
-        g (Right x) (Right y) = Right (intersect x y)
+        g (Right x) (Right y) = Right (xor x y)
+        leftSide = right (varArgs allowed exp)
+
+varArgs allowed exp = f (foldVarArgs (map (getVarArgs allowed) (args exp))) allowed
+        where
+        f (Right x) y = Right (union x y)
+        f (Left x) _ = Left x 
 
 foldVarArgs :: [Either CompileError [Expression]] -> Either CompileError [Expression]
 foldVarArgs = eitherFold f
         where
         f x y | equal x y = Left (CompileError "Conflicting Definitions" (position (posX x y)) "barbaz")
-              | otherwise = Right (x ++ y)
+              | otherwise = Right (union x y)
 
 getVarArgs :: [Expression] -> Expression -> Either CompileError [Expression]
 getVarArgs allowed exp
         | (isVar exp) && (elem exp allowed) = Left (CompileError "Conflicting Definitions" (position exp) "barbaz")
         | (isVar exp) = Right [exp]
         | (isApp exp) = (eitherFold f) (map (\y -> getVarArgs allowed y) (appArgs exp))
-        | (isDatatype exp) && (isTupel (dataType exp)) = (eitherFold f) (map (\y -> getVars allowed y) (tupelValue (dataType exp)))
-        | (isDatatype exp) && (isList (dataType exp)) = (eitherFold f) (map (\y -> getVars allowed y) (listValue (dataType exp)))
+        | (isDatatype exp) && (isTupel (dataType exp)) = (eitherFold f) (map (\y -> getVarArgs allowed y) (tupelValue (dataType exp)))
+        | (isDatatype exp) && (isList (dataType exp)) = (eitherFold f) (map (\y -> getVarArgs allowed y) (listValue (dataType exp)))
         | otherwise = Right []
         where
         f x y | equal x y = Left (CompileError "Conflicting Definitions" (position exp) "barbaz")
-              | otherwise = Right (x ++ y)
+              | otherwise = Right (union x y)
 
 checkFunc :: Expression -> Either CompileError [Expression]
 checkFunc f = unusedVars [] f
@@ -105,12 +112,15 @@ getFunc allowed exp
 
 -- internal functions
 
-equal x y = any (\z -> notElem z x) y
+equal x y = any (\z -> elem z x) y
+
+filterUnused l r = filter (\y -> notElem y r) l
 
 posX :: (Eq a) => [a] -> [a] -> a
 posX x y = head (filter (\z -> elem z y) x)
 posY x y = head (filter (\z -> elem z x) y)
 
+xor a b = (a ++ b) \\ (intersect a b)
 
 filtermap _ _ [] = []
 filtermap f m (x:xs) | f x == True = (m x) : (filtermap f m xs)
@@ -122,3 +132,8 @@ eitherFold _ [x] = x
 eitherFold _ ((Left x):_) = Left x
 eitherFold _ (_:(Left x):_) = Left x
 eitherFold f ((Right x):(Right y):xs) = eitherFold f ((f x y):xs)
+
+right (Right x) = x
+left (Left x) = x
+
+testing = Function testEmptyPos (Fun testEmptyPos "f") [Variable testEmptyPos "X"] Wildcard (Application testEmptyPos (Operator testEmptyPos "+") [Variable testEmptyPos "X",Fun testEmptyPos "y"]) [Function testEmptyPos (Fun testEmptyPos "y") [] Wildcard (Application testEmptyPos (Operator testEmptyPos "+") [Variable testEmptyPos "W",Datatype testEmptyPos (Number 2)]) []]

@@ -44,7 +44,7 @@ instance Show CompileError where
     show (CompileError a b c) = a ++ " at " ++ show b ++ ":\n" ++ c
 
 instance Eq CompileError where
-    (CompileError a _ c) == (CompileError a' _ c') = (a == a' && c == c')
+    (CompileError a _ c) == (CompileError a' _ c') = a == a'
 
 instance Eq Expression where
     (Variable _ a) == (Variable _ b) = a == b
@@ -58,8 +58,9 @@ instance Eq Expression where
     _ == _ = False
 
 
-
 -- a lot of trivial functions for using the types
+
+testEmptyPos = newPos "" 0 0
 
 treeName (Tree a _ _ _ _) = a
 treeCompile (Tree _ a _ _ _) = a
