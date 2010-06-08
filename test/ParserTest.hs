@@ -1,4 +1,4 @@
-module Test where
+module ParserTest where
 
 import Test.HUnit
 import Parser

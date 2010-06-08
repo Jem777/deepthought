@@ -67,8 +67,11 @@ varArgs allowed exp = f (foldVarArgs (map (getVarArgs allowed) (args exp))) allo
 foldVarArgs :: [Either CompileError [Expression]] -> Either CompileError [Expression]
 foldVarArgs = eitherFold f
         where
+        f x y = Right (union x y)
+        {-
         f x y | equal x y = Left (CompileError "Conflicting Definitions" (position (posX x y)) "barbaz")
               | otherwise = Right (union x y)
+              -}
 
 getVarArgs :: [Expression] -> Expression -> Either CompileError [Expression]
 getVarArgs allowed exp
@@ -79,8 +82,11 @@ getVarArgs allowed exp
         | (isDatatype exp) && (isList (dataType exp)) = (eitherFold f) (map (\y -> getVarArgs allowed y) (listValue (dataType exp)))
         | otherwise = Right []
         where
+        f x y = Right (union x y)
+        {-
         f x y | equal x y = Left (CompileError "Conflicting Definitions" (position exp) "barbaz")
               | otherwise = Right (union x y)
+              -}
 
 checkFunc :: Expression -> Either CompileError [Expression]
 checkFunc f = unusedVars [] f
@@ -120,7 +126,8 @@ posX :: (Eq a) => [a] -> [a] -> a
 posX x y = head (filter (\z -> elem z y) x)
 posY x y = head (filter (\z -> elem z x) y)
 
-xor a b = (a ++ b) \\ (intersect a b)
+--xor a b = (a ++ b) \\ (intersect a b)
+xor = (\\) 
 
 filtermap _ _ [] = []
 filtermap f m (x:xs) | f x == True = (m x) : (filtermap f m xs)
@@ -132,6 +139,10 @@ eitherFold _ [x] = x
 eitherFold _ ((Left x):_) = Left x
 eitherFold _ (_:(Left x):_) = Left x
 eitherFold f ((Right x):(Right y):xs) = eitherFold f ((f x y):xs)
+
+eitherFold2 f g l 
+        | (not . null) (lefts l) = Left (foldl1 g (lefts l))
+        | otherwise = Right (foldl1 f (rights l))
 
 right (Right x) = x
 left (Left x) = x
