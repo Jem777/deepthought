@@ -4,6 +4,14 @@ import Test.HUnit
 import Types
 import Compile
 
+------------------------------
+-- Test Suite fo Compile.hs --
+------------------------------
+--
+--  TODOs:
+-- checkVars with lambdas
+-- checkVars with inlineFunction and failing leftSide
+
 compileTest = TestList [genTest simple_vars, genTest complex_vars]
 
 genTest (n, f, l) = TestLabel n (TestList (map (\(a, b, c) -> (TestCase (assertEqual a b (f c)))) l))

@@ -32,14 +32,15 @@ getFunctionNames l = (f l) . (map funcName)
 checkVars :: Expression -> Either [CompileError] [Expression]
 checkVars f = getVars [] f
 
-unusedVars :: [Expression] -> Expression -> Either [CompileError] [Expression]
-unusedVars allowed exp = unused (rightSide leftSide)
+usedVars :: [Expression] -> Expression -> Either [CompileError] ([Expression], [Expression])
+usedVars allowed exp = used leftSide rightSide
         where 
         leftSide = varArgs allowed exp
-        rightSide (Right x) = getVars x (body exp)
-        rightSide (Left x) = Left x
-        unused (Right x) = Right $ filterUnused (right leftSide) x
-        unused (Left x) = Left x
+        rightSide x = getVars x (body exp)
+        used (Left l) _ = Left l
+        used (Right l) r = f l (r l)
+        f _ (Left r) = Left r
+        f l (Right r) = Right (l,r)
 
 -- getVars allowedVars expression = usedVars
 getVars :: [Expression] -> Expression -> Either [CompileError] [Expression]
@@ -49,14 +50,18 @@ getVars allowed exp
         | (isApp exp) = sFold $ (getVars allowed (appName exp)) : (map (\y -> getVars allowed y) (appArgs exp))
         | (isDatatype exp) && (isTupel (dataType exp)) = sFold (map (\y -> getVars allowed y) (tupelValue (dataType exp)))
         | (isDatatype exp) && (isList (dataType exp)) = sFold (map (\y -> getVars allowed y) (listValue (dataType exp)))
-        | (isLambda exp) = unusedVars allowed exp 
-        | (isFunction exp) = g (unusedVars allowed exp) (eitherFold xor (++) $ map (unusedVars leftSide) (funcWhere exp))
+        | (isLambda exp) = unusedVars (usedVars allowed exp)
+        | (isFunction exp) = g (usedVars allowed exp) (map (usedVars leftSide) (funcWhere exp))
         | otherwise = Right []
         where
         g (Left x) _ = Left x
-        g _ (Left x) = Left x
-        g (Right x) (Right y) = Right (xor x y)
-        leftSide = right (varArgs allowed exp)
+        g x xs = unusedVars (uFold (x:xs))
+        f (l1,r1) (l2,r2) = (union l1 l2, union r1 r2)
+        leftSide = right (varArgs allowed exp) --TODO: test this (right is unsafe)
+
+unusedVars :: Either [CompileError] ([Expression], [Expression]) -> Either [CompileError] [Expression]
+unusedVars (Left x) = Left x
+unusedVars (Right (allowed, used)) = Right (filterUnused allowed used)
 
 varArgs allowed exp = f (sFold (map (getVarArgs allowed) (args exp))) allowed
         where
@@ -83,13 +88,16 @@ posX :: (Eq a) => [a] -> [a] -> a
 posX x y = head (filter (\z -> elem z y) x)
 posY x y = head (filter (\z -> elem z x) y)
 
---xor a b = (a ++ b) \\ (intersect a b)
-xor = (\\) 
-
 filtermap _ _ [] = []
 filtermap f m (x:xs) | f x == True = (m x) : (filtermap f m xs)
                      | otherwise = filtermap f m xs
 
+uFold [] = Right ([], [])
+uFold l 
+        | (not . null) (lefts l) = Left (foldl1 (++) (lefts l))
+        | otherwise = Right (foldl1 union (fst x), foldl1 union (snd x))--(foldl1 first r, foldl1 second r)
+        where 
+        x = unzip (rights l)
 
 sFold :: (Eq a) => [Either [a1] [a]] -> Either [a1] [a]
 sFold = eitherFold union (++)
