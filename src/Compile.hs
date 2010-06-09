@@ -90,13 +90,14 @@ filtermap f m (x:xs) | f x == True = (m x) : (filtermap f m xs)
                      | otherwise = filtermap f m xs
 
 uFold [] = Right ([], [])
-uFold l 
+uFold l
         | (not . null) (lefts l) = Left (foldl1 (++) (lefts l))
         | otherwise = Right (foldl1 union (fst x), foldl1 union (snd x))--(foldl1 first r, foldl1 second r)
         where 
         x = unzip (rights l)
 
 sFold :: (Eq a) => [Either [a1] [a]] -> Either [a1] [a]
+sFold [] = Right []
 sFold l 
         | (not . null) (lefts l) = Left (foldl1 (++) (lefts l))
         | otherwise = Right (foldl1 union (rights l))
