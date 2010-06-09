@@ -30,7 +30,7 @@ getFunctionNames l = (f l) . (map funcName)
                         | otherwise = f (x:y:ys) xs 
 
 checkVars :: Expression -> Either [CompileError] [Expression]
-checkVars f = getVars [] f
+checkVars = unusedVars . (getVars [])
 
 usedVars :: [Expression] -> Expression -> Either [CompileError] ([Expression], [Expression])
 usedVars allowed exp = used leftSide rightSide
@@ -40,23 +40,22 @@ usedVars allowed exp = used leftSide rightSide
         used (Left l) _ = Left l
         used (Right l) r = f l (r l)
         f _ (Left r) = Left r
-        f l (Right r) = Right (l,r)
+        f l (Right (r1,r2)) = Right (union l r1,r2) --concats the left side with the varArgs of the body
 
 -- getVars allowedVars expression = usedVars
-getVars :: [Expression] -> Expression -> Either [CompileError] [Expression]
+getVars :: [Expression] -> Expression -> Either [CompileError] ([Expression], [Expression])
 getVars allowed exp 
-        | (isVar exp) && (elem exp allowed) = Right [exp]
+        | (isVar exp) && (elem exp allowed) = Right ([], [exp])
         | (isVar exp) = Left [CompileError "Variable unbound" (position exp) "barbaz"]
-        | (isApp exp) = sFold $ (getVars allowed (appName exp)) : (map (\y -> getVars allowed y) (appArgs exp))
-        | (isDatatype exp) && (isTupel (dataType exp)) = sFold (map (\y -> getVars allowed y) (tupelValue (dataType exp)))
-        | (isDatatype exp) && (isList (dataType exp)) = sFold (map (\y -> getVars allowed y) (listValue (dataType exp)))
-        | (isLambda exp) = unusedVars (usedVars allowed exp)
+        | (isApp exp) = uFold $ (getVars allowed (appName exp)) : (map (\y -> getVars allowed y) (appArgs exp))
+        | (isDatatype exp) && (isTupel (dataType exp)) = uFold (map (\y -> getVars allowed y) (tupelValue (dataType exp)))
+        | (isDatatype exp) && (isList (dataType exp)) = uFold (map (\y -> getVars allowed y) (listValue (dataType exp)))
+        | (isLambda exp) = usedVars allowed exp
         | (isFunction exp) = g (usedVars allowed exp) (map (usedVars leftSide) (funcWhere exp))
-        | otherwise = Right []
+        | otherwise = Right ([], [])
         where
         g (Left x) _ = Left x
-        g x xs = unusedVars (uFold (x:xs))
-        f (l1,r1) (l2,r2) = (union l1 l2, union r1 r2)
+        g x xs = uFold (x:xs)
         leftSide = right (varArgs allowed exp) --TODO: test this (right is unsafe)
 
 unusedVars :: Either [CompileError] ([Expression], [Expression]) -> Either [CompileError] [Expression]
@@ -80,8 +79,6 @@ getVarArgs allowed exp
 
 -- internal functions
 
-equal x y = any (\z -> elem z x) y
-
 filterUnused l r = filter (\y -> notElem y r) l
 
 posX :: (Eq a) => [a] -> [a] -> a
@@ -100,14 +97,11 @@ uFold l
         x = unzip (rights l)
 
 sFold :: (Eq a) => [Either [a1] [a]] -> Either [a1] [a]
-sFold = eitherFold union (++)
-
-eitherFold _ _ [] = Right []
-eitherFold f g l 
-        | (not . null) (lefts l) = Left (foldl1 g (lefts l))
-        | otherwise = Right (foldl1 f (rights l))
+sFold l 
+        | (not . null) (lefts l) = Left (foldl1 (++) (lefts l))
+        | otherwise = Right (foldl1 union (rights l))
 
 right (Right x) = x
 left (Left x) = x
 
-testing = Function testEmptyPos (Fun testEmptyPos "f") [Variable testEmptyPos "X"] Wildcard (Application testEmptyPos (Operator testEmptyPos "+") [Variable testEmptyPos "X",Fun testEmptyPos "y"]) [Function testEmptyPos (Fun testEmptyPos "y") [] Wildcard (Application testEmptyPos (Operator testEmptyPos "+") [Variable testEmptyPos "W",Datatype testEmptyPos (Number 2)]) []]
+testing = Function testEmptyPos (Operator testEmptyPos ".") [Variable testEmptyPos "F",Variable testEmptyPos "G"] Wildcard (Lambda testEmptyPos [Variable testEmptyPos "Y", Variable testEmptyPos "X"] (Application testEmptyPos (Variable testEmptyPos "F") [Application testEmptyPos (Variable testEmptyPos "G") [Variable testEmptyPos "Y"]])) []

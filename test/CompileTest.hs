@@ -9,7 +9,6 @@ import Compile
 ------------------------------
 --
 --  TODOs:
--- checkVars with lambdas
 -- checkVars with inlineFunction and failing leftSide
 
 compileTest = TestList [genTest simple_vars, genTest complex_vars]
@@ -64,6 +63,14 @@ complex_vars = ("complex variable checks", checkVars, [
         "f X Y -> a + b where (a -> X * 2; b -> Y *3;)",
         Right [],
         Function testEmptyPos (Fun testEmptyPos "f") [Variable testEmptyPos "X",Variable testEmptyPos "Y"] Wildcard (Application testEmptyPos (Operator testEmptyPos "+") [Fun testEmptyPos "a",Fun testEmptyPos "b"]) [Function testEmptyPos (Fun testEmptyPos "a") [] Wildcard (Application testEmptyPos (Operator testEmptyPos "*") [Variable testEmptyPos "X",Datatype testEmptyPos (Number 2)]) [],Function testEmptyPos (Fun testEmptyPos "b") [] Wildcard (Application testEmptyPos (Operator testEmptyPos "*") [Variable testEmptyPos "Y",Datatype testEmptyPos (Number 3)]) []]),
+    (
+        "F . G -> (\\Y -> F (G Y));",
+        Right [],
+        Function testEmptyPos (Operator testEmptyPos ".") [Variable testEmptyPos "F",Variable testEmptyPos "G"] Wildcard (Lambda testEmptyPos [Variable testEmptyPos "Y"] (Application testEmptyPos (Variable testEmptyPos "F") [Application testEmptyPos (Variable testEmptyPos "G") [Variable testEmptyPos "Y"]])) []),
+    (
+        "F . G -> (\\Y,X -> F (G Y));",
+        Right [Variable testEmptyPos "X"],
+        Function testEmptyPos (Operator testEmptyPos ".") [Variable testEmptyPos "F",Variable testEmptyPos "G"] Wildcard (Lambda testEmptyPos [Variable testEmptyPos "Y", Variable testEmptyPos "X"] (Application testEmptyPos (Variable testEmptyPos "F") [Application testEmptyPos (Variable testEmptyPos "G") [Variable testEmptyPos "Y"]])) []),
     (
         "fail X Y -> a + b where (a -> X * 2; b Y -> Y *3;)",
         Left [CompileError "Conflicting Definitions" testEmptyPos ""],
