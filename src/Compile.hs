@@ -20,14 +20,19 @@ parse fname g = parser fname >>= return . f
         f (Right x) = show (g x) 
 
 --first argument are global funs and operators, second list of local functions
-getFunctionNames :: [Expression] -> [Expression] -> Either CompileError [Expression]
+getFunctionNames :: [Expression] -> [Expression] -> Either [CompileError] [Expression]
 getFunctionNames l = (f l) . (map funcName)
         where
         f outp [] = Right (reverse outp)
         f [] (x:xs) = f [x] xs
-        f (y:ys) (x:xs) | elem x ys = Left (CompileError "NameError" (position x) "foobar")
+        f (y:ys) (x:xs) | elem x ys = Left [CompileError "NameError" (position x) "foobar"]
                         | x == y = f (y:ys) xs
                         | otherwise = f (x:y:ys) xs 
+
+
+---------------------
+-- check Variables --
+---------------------
 
 checkVars :: Expression -> Either [CompileError] [Expression]
 checkVars = unusedVars . (getVars [])
@@ -75,6 +80,41 @@ getVarArgs allowed exp
         | (isDatatype exp) && (isTupel (dataType exp)) = sFold (map (\y -> getVarArgs allowed y) (tupelValue (dataType exp)))
         | (isDatatype exp) && (isList (dataType exp)) = sFold (map (\y -> getVarArgs allowed y) (listValue (dataType exp)))
         | otherwise = Right []
+
+---------------------
+-- check functions --
+---------------------
+
+checkFuncs = unusedFuncs (Right [])
+
+unusedFuncs (Left x) _ = Left x --probably not needed
+unusedFuncs allowed funcs = (filt . uFold) (map (getFunc allowed) funcs)
+        where
+        filt (Left x) = Left x
+        filt (Right (a,b)) = Right (filterUnused a b)
+
+getFunc :: Either [CompileError] [Expression] -> Expression -> Either [CompileError] ([Expression], [Expression])
+getFunc (Left x) _ = Left x
+getFunc (Right a) exp = uFold ((usedFunc allowed (body exp)) : (map (getFunc allowed) (funcWhere exp)))
+        where
+        funcNames = getFunctionNames a (funcWhere exp)
+        allo (Left x) = Left x
+        allo (Right x) = Right (union a x)
+        allowed = allo funcNames
+
+
+usedFunc :: Either [CompileError] [Expression] -> Expression -> Either [CompileError] ([Expression], [Expression])
+usedFunc (Left x) _ = Left x
+usedFunc (Right allowed) exp
+        | (isApp exp) = uFold $ (recursive (appName exp)) : (map recursive (appArgs exp))
+        | ((isFun exp) || (isOp exp)) && (elem exp allowed) = Right ([], [exp])
+        | ((isFun exp) || (isOp exp)) = Left [CompileError "NameError" (position exp) "function asdf not defined"]
+        | (isDatatype exp) && (isTupel (dataType exp)) = uFold (map recursive (tupelValue (dataType exp)))
+        | (isDatatype exp) && (isList (dataType exp)) = uFold (map recursive (listValue (dataType exp)))
+        | (isLambda exp) = recursive (body exp)
+        | otherwise = Right ([], [])
+        where
+        recursive = usedFunc (Right allowed)
 
 
 -- internal functions
