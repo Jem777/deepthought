@@ -88,34 +88,36 @@ getVarArgs allowed exp
 checkFuncs = unusedFuncs (Right [])
 
 unusedFuncs (Left x) _ = Left x --probably not needed
-unusedFuncs allowed funcs = (filt . uFold) (map (getFunc allowed) funcs)
+unusedFuncs (Right imports) funcs = (filt . uFold) (map (getFunc allowed) funcs)
         where
         filt (Left x) = Left x
         filt (Right (a,b)) = Right (filterUnused a b)
+        allowed = allowedFuncs imports funcs
 
 getFunc :: Either [CompileError] [Expression] -> Expression -> Either [CompileError] ([Expression], [Expression])
 getFunc (Left x) _ = Left x
 getFunc (Right a) exp = uFold ((usedFunc allowed (body exp)) : (map (getFunc allowed) (funcWhere exp)))
         where
-        funcNames = getFunctionNames a (funcWhere exp)
-        allo (Left x) = Left x
-        allo (Right x) = Right (union a x)
-        allowed = allo funcNames
-
+        allowed = allowedFuncs a (funcWhere exp)
 
 usedFunc :: Either [CompileError] [Expression] -> Expression -> Either [CompileError] ([Expression], [Expression])
 usedFunc (Left x) _ = Left x
 usedFunc (Right allowed) exp
         | (isApp exp) = uFold $ (recursive (appName exp)) : (map recursive (appArgs exp))
-        | ((isFun exp) || (isOp exp)) && (elem exp allowed) = Right ([], [exp])
-        | ((isFun exp) || (isOp exp)) = Left [CompileError "NameError" (position exp) "function asdf not defined"]
+        | ((isFun exp) || (isOp exp)) && (elem exp allowed) = Right (allowed, [exp])
+        | ((isFun exp) || (isOp exp)) = Left [CompileError "NameError" (position exp) ("function '" ++ (value exp) ++ "' not defined")]
         | (isDatatype exp) && (isTupel (dataType exp)) = uFold (map recursive (tupelValue (dataType exp)))
         | (isDatatype exp) && (isList (dataType exp)) = uFold (map recursive (listValue (dataType exp)))
         | (isLambda exp) = recursive (body exp)
-        | otherwise = Right ([], [])
+        | otherwise = Right (allowed, [])
         where
         recursive = usedFunc (Right allowed)
 
+allowedFuncs a exp = allowed funcNames
+        where
+        funcNames = getFunctionNames a exp
+        allowed (Left x) = Left x
+        allowed (Right x) = Right (union a x)
 
 -- internal functions
 
@@ -145,4 +147,4 @@ sFold l
 right (Right x) = x
 left (Left x) = x
 
-testing = Function testEmptyPos (Operator testEmptyPos ".") [Variable testEmptyPos "F",Variable testEmptyPos "G"] Wildcard (Lambda testEmptyPos [Variable testEmptyPos "Y", Variable testEmptyPos "X"] (Application testEmptyPos (Variable testEmptyPos "F") [Application testEmptyPos (Variable testEmptyPos "G") [Variable testEmptyPos "Y"]])) []
+testing = [Function testEmptyPos (Fun testEmptyPos "f") [Variable testEmptyPos "X"] Wildcard (Variable testEmptyPos "X") []]

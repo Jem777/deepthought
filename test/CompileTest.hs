@@ -11,7 +11,7 @@ import Compile
 --  TODOs:
 -- checkVars with inlineFunction and failing leftSide
 
-compileTest = TestList [genTest simple_vars, genTest complex_vars]
+compileTest = TestList [genTest simple_vars, genTest complex_vars, genTest simple_funcs]
 
 genTest (n, f, l) = TestLabel n (TestList (map (\(a, b, c) -> (TestCase (assertEqual a b (f c)))) l))
 
@@ -75,6 +75,18 @@ complex_vars = ("complex variable checks", checkVars, [
         "fail X Y -> a + b where (a -> X * 2; b Y -> Y *3;)",
         Left [CompileError "Conflicting Definitions" testEmptyPos ""],
         Function testEmptyPos (Fun testEmptyPos "f") [Variable testEmptyPos "X",Variable testEmptyPos "Y"] Wildcard (Application testEmptyPos (Operator testEmptyPos "+") [Fun testEmptyPos "a",Fun testEmptyPos "b"]) [Function testEmptyPos (Fun testEmptyPos "a") [] Wildcard (Application testEmptyPos (Operator testEmptyPos "*") [Variable testEmptyPos "X",Datatype testEmptyPos (Number 2)]) [],Function testEmptyPos (Fun testEmptyPos "b") [Variable testEmptyPos "Y"] Wildcard (Application testEmptyPos (Operator testEmptyPos "*") [Variable testEmptyPos "Y",Datatype testEmptyPos (Number 3)]) []])
+    ])
+
+simple_funcs = ("simple functions check", checkFuncs, [
+    (
+        "f X -> X;",
+        Right [Fun testEmptyPos "f"],
+        [Function testEmptyPos (Fun testEmptyPos "f") [Variable testEmptyPos "X"] Wildcard (Variable testEmptyPos "X") []]),
+    (
+        "add A B -> A; alias A B -> add A B;",
+        Right [Fun testEmptyPos "alias"],
+        [Function testEmptyPos (Fun testEmptyPos "add") [Variable testEmptyPos "A",Variable testEmptyPos "B"] Wildcard (Variable testEmptyPos "A") [],
+        Function testEmptyPos (Fun testEmptyPos "alias") [Variable testEmptyPos "A",Variable testEmptyPos "B"] Wildcard (Application testEmptyPos (Fun testEmptyPos "add") [Variable testEmptyPos "A",Variable testEmptyPos "B"]) []])
     ])
 
 ----------------------------------
