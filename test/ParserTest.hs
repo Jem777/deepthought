@@ -7,7 +7,7 @@ import Types
 import Data.Either
 
 
-parserTests = genList (combine listComplex listPrimitive)
+parserTests = TestList [genList (combine listComplex listPrimitive)]
 
 --------------------
 -- Parser testing --
@@ -52,3 +52,11 @@ listPrimitive = (primitive, [
         ("Atom /w underscore", (Atom "atom_f"), "@atom_f"),
         ("Atom /w uppercase", (Atom "atOM"), "@atOM")
         ])
+
+-- internal functions
+
+testParse x y = f (parse x "" y)
+    where
+    f (Left a) = Left (formatError a)
+    f (Right x) = (Right x)
+

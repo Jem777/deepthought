@@ -11,7 +11,7 @@ import Compile
 --  TODOs:
 -- checkVars with inlineFunction and failing leftSide
 
-compileTest = TestList [genTest simple_vars, genTest complex_vars, genTest simple_funcs]
+compileTests = TestList [genTest simple_vars, genTest complex_vars, genTest simple_funcs]
 
 genTest (n, f, l) = TestLabel n (TestList (map (\(a, b, c) -> (TestCase (assertEqual a b (f c)))) l))
 

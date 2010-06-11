@@ -19,11 +19,6 @@ import Expr
 
 parser = parseFromFile deepthought
 
-testParse x y = f (parse x "" y)
-    where
-    f (Left a) = Left (formatError a)
-    f (Right x) = (Right x)
-
 formatError :: ParseError -> CompileError
 formatError a = CompileError 
         "SyntaxError" 
