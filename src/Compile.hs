@@ -25,7 +25,7 @@ getFunctionNames l = (f l) . (map funcName)
         where
         f outp [] = Right (reverse outp)
         f [] (x:xs) = f [x] xs
-        f (y:ys) (x:xs) | elem x ys = Left [CompileError "NameError" (position x) "foobar"]
+        f (y:ys) (x:xs) | elem x ys = Left [CompileError "NameError" (position x) "Conflicting definition with "]
                         | x == y = f (y:ys) xs
                         | otherwise = f (x:y:ys) xs 
 
@@ -118,6 +118,19 @@ allowedFuncs a exp = allowed funcNames
         funcNames = getFunctionNames a exp
         allowed (Left x) = Left x
         allowed (Right x) = Right (union a x)
+
+----------------
+-- check tree --
+----------------
+
+checkExports :: Tree -> Either [CompileError] [Expression] -> Either [CompileError] [Expression]
+checkExports _ (Left y) = Left y
+checkExports x (Right y) 
+        | isInfixOf (map value y) (treeExports x) = Left [CompileError "ExportError" (testEmptyPos) "exported a non existing function"]
+        | otherwise = Right $ (\a -> filter (\c -> notElem (value c) a)) (treeExports x) y
+
+checkImports = True
+
 
 -- internal functions
 
