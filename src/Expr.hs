@@ -112,8 +112,12 @@ list x = List <$> squares (commaSep x)
 tupel x = Tupel <$> parens (commaSep x)
 
 -- expressions
-fun = Fun <$> getPosition <*> funcId 
-op = Operator <$> getPosition <*> operator
+bareFun = Fun <$> getPosition <*> funcId 
+bareOp = Operator <$> getPosition <*> operator
+qualifiedFun = Fun <$> getPosition <*> ((endBy1 upperId2 (string moduleOp)) *> funcId)
+qualifiedOp = Operator <$> getPosition <*> ((endBy1 upperId2 (string moduleOp)) *> operator)
+fun = bareFun <|> qualifiedFun
+op = bareOp <|> qualifiedOp
 prefixOp = Operator <$> getPosition <*> prefixOperator
 var = Variable <$> getPosition <*> varId
 datatype x = Datatype <$> getPosition <*> x
