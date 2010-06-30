@@ -41,8 +41,8 @@ parseImport = do --TODO: restructure this - it probably needs a new type
     modname <- (option (concatWith mod moduleOp) (reserved "as" >> moduleId))
     return (mod, modname)
 
-parseExport :: GenParser Char st [String]
-parseExport = reserved "export" >> squares (commaSep funcId)
+parseExport :: GenParser Char st [Expression]
+parseExport = reserved "export" >> squares (commaSep (bareOp <|> bareFun))
 
 parseCompile :: GenParser Char st [String]
 parseCompile = reserved "compile" >> squares (commaSep funcId)

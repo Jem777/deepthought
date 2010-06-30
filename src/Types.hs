@@ -6,6 +6,9 @@ import Text.ParserCombinators.Parsec.Pos
 --
 -- definition of all necessary types for parsing
 -- and types for an intermediate byte-code
+--
+-- TODOs:
+-- support for qualified operators and functions
 
 data Datatype = --primitve datatypes and lists and tupels
             List [Expression]
@@ -32,7 +35,7 @@ data Expression = -- everything that evals to an datatype
 
 data TreeObject = Expression (Integer, Integer) String Expression
 
-data Tree = Tree String [String] [String] [([String], String)] [Expression] -- modname, compileflags, exports, imports, functions
+data Tree = Tree String [String] [Expression] [([String], String)] [Expression] -- modname, compileflags, exports, imports, functions
             deriving (Show, Eq)
 
 data CompileError = CompileError String SourcePos String --kind of Error, SourcePos, Message

@@ -123,11 +123,14 @@ allowedFuncs a exp = allowed funcNames
 -- check tree --
 ----------------
 
+-- takes a parsetree and checks exports - import-check not implemented yet -> []
+checkExports2 tree = checkExports tree (getFunctionNames [] (treeFuncs tree))
+
 checkExports :: Tree -> Either [CompileError] [Expression] -> Either [CompileError] [Expression]
 checkExports _ (Left y) = Left y
 checkExports x (Right y) 
-        | isInfixOf (map value y) (treeExports x) = Left [CompileError "ExportError" (testEmptyPos) "exported a non existing function"]
-        | otherwise = Right $ (\a -> filter (\c -> notElem (value c) a)) (treeExports x) y
+        | isInfixOf y (treeExports x) = Left [CompileError "ExportError" (testEmptyPos) "exported a non existing function"]
+        | otherwise = Right $ filterUnused (treeExports x) y
 
 checkImports = True
 
