@@ -5,6 +5,7 @@ import Parser
 import Expr
 import Types
 import Data.Either
+import Text.ParserCombinators.Parsec
 
 
 parserTests = TestList [genList (combine listComplex listPrimitive)]
