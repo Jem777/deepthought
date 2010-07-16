@@ -40,6 +40,9 @@ data Tree = Tree String [String] [Expression] [([String], String)] [Expression] 
 
 data CompileError = CompileError String SourcePos String --kind of Error, SourcePos, Message
 
+data State =
+    State [Tree] [Expression] [(Expression, Datatype)]
+    -- arguemts are imported modules, functions and variables
 
 -- instances for the types -  SourcePos is irrelevant to equalency
 
