@@ -1,7 +1,7 @@
 module Types
     where
 
-import Text.ParserCombinators.Parsec.Pos
+import qualified Text.ParserCombinators.Parsec.Pos as P
 
 --
 -- definition of all necessary types for parsing
@@ -9,6 +9,7 @@ import Text.ParserCombinators.Parsec.Pos
 --
 -- TODOs:
 -- support for qualified operators and functions
+-- add type RuntimeException
 
 data Datatype = --primitve datatypes and lists and tupels
             List [Expression]
@@ -26,7 +27,7 @@ data Expression = -- everything that evals to an datatype
             | Operator SourcePos String
             | Application SourcePos Expression [Expression]
             -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
-            | Lambda SourcePos [Expression] Expression --[Expr] are the arguments, Expr is the Body
+            | Lambda SourcePos [Expression] Expression -- [Expr] are the arguments, Expr is the Body -- is a datatype
             | Function SourcePos Expression [Expression] Expression Expression [Expression] 
             --first is the ident, second the args, third the guard, fourth the body, fifth closures
             | Datatype SourcePos Datatype
@@ -44,6 +45,7 @@ data State =
     State [Tree] [Expression] [(Expression, Datatype)]
     -- arguemts are imported modules, functions and variables
 
+type SourcePos = P.SourcePos
 -- instances for the types -  SourcePos is irrelevant to equalency
 
 instance Show CompileError where
@@ -66,7 +68,7 @@ instance Eq Expression where
 
 -- a lot of trivial functions for using the types
 
-testEmptyPos = newPos "" 0 0
+testEmptyPos = P.newPos "" 0 0
 
 treeName (Tree a _ _ _ _) = a
 treeCompile (Tree _ a _ _ _) = a

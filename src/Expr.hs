@@ -8,7 +8,7 @@ module Expr
 
 import Lexer
 import Types
-import ApplicativeParsec
+import ApplicativeParsec hiding (SourcePos)
 import Text.ParserCombinators.Parsec.Expr
 
 
