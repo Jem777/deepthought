@@ -58,32 +58,22 @@ printf _ (Number a) _ = putStrLn (show a)
 
 
 eval :: (Monad m) => State -> Expression -> m (Either [CompileError] Datatype)
---eval state (Application pos fun args) = apply (translate_fun fun) state pos fun args
+eval state (Application pos fun args) = apply (translate_fun fun) state pos fun args
 eval a b = (return . Right) (Atom "foo")
 
-{-
---apply :: Maybe (SourcePos -> Datatype -> Datatype -> Either [CompileError] Datatype) -> State -> SourcePos -> Expression -> [Expression] -> m (Either [CompileError] Datatype)
+
 apply Nothing _ p fun _ = return (Left [nameException p fun])
-apply (Just f) state pos fun (arg1:arg2:args) = (deMonad (f pos)) `fmap` (evaluate arg1) `ap` (evaluate arg2)
+apply (Just f) state pos fun (arg1:arg2:args) = (apply2 pos) state f arg1 arg2
+
+apply2 pos state fun arg1 arg2 = (fun pos) `fmap` (h ap (eval state) arg1) `ap` (h ap (eval state) arg2)
     where
-        evaluate :: Expression -> m (Either [CompileError] Datatype)
-        evaluate = eval state
--}
+    h f a (Right b) = Right (f a b)
+    h _ _ (Left b) = Left b
+    help f (Right x) (Right y) = f x y
+    help _ (Left x) (Left y) = Left (x ++ y)
+    help _ (Left x) _ = Left x
+    help _ _ (Left x) = Left x
 
-apply Nothing _ p fun _ = return (Left [nameException p fun])
-apply (Just f) state pos fun (arg1:arg2:args) = (apply2 state f arg1 arg2)
-
-apply2 state fun arg1 arg2 = fun `fmap` (fmap (eval state) arg1) `ap` (fmap (eval state) arg2)
-{-
-deMonad :: (Datatype -> Datatype -> Either [CompileError] Datatype)
-    -> Either [CompileError] Datatype -- argument 1
-    -> Either [CompileError] Datatype -- arg 2
-    -> (m Either [CompileError] Datatype) -- output
-deMonad _ (Left x) (Left y) = return (Left (x ++ y))
-deMonad _ (Left x) _ = return (Left x)
-deMonad _ _ (Left y) = return (Left y)
-deMonad f (Right arg1) (Right arg2) = return $ f `fmap` arg1 `ap` arg2--(f `fmap` arg1 `ap` arg2)
--}
 translate_fun fun = lookup (value fun) fun_list
 io_out = Right
 
