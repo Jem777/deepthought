@@ -7,4 +7,5 @@ nameError x y = CompileError "NameError" (position x) ("Conflicting definitions 
 varUnbound x = CompileError "NameError" (position x) ("Variable " ++ (show x) ++ "unbound\n")
 
 --runtime exceptions
-typeError pos opName x y = CompileError "TypeError" pos ("unsupported types for " ++ opName ++ ": " ++ (show x) ++ " and " ++ (show y) ++ "\n")
+typeException pos opName x y = CompileError "TypeError" pos ("unsupported types for " ++ opName ++ ": " ++ (show x) ++ " and " ++ (show y) ++ "\n")
+nameException pos opName = CompileError "NameError" pos ("function " ++ (value opName) ++ "not found")
