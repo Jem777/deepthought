@@ -68,7 +68,7 @@ boolId =
 
 wildcard = symbol "_" <?> "wildcard"
 funcId = lowerId <?> "function"
-atomId = char '@' >> lowerId <?> "atom"
+atomId = (:) <$> char '@' <*> (lowerId <?> "atom")
 moduleId = upperId <?> "module"
 varId = upperId <?> "variable"
 moduleOp = "::"
