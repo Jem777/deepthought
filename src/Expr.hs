@@ -72,7 +72,7 @@ expression :: GenParser Char st Expression
 expression =
     try application
     <|> try (buildExpressionParser table expr)
-    <|> lambda
+    <|> datatype lambda
     <|> expr
 
 expr =
@@ -95,8 +95,8 @@ appHead =
 application :: GenParser Char st Expression
 application = Application <$> getPosition <*> appHead <*> (many1 (fun <|> expr))
 
-lambda :: CharParser st Expression
-lambda = Lambda <$> ((reservedOp "\\") *> getPosition) <*> (commaSep1 var) <*> ((reservedOp "->") *> expression)
+lambda :: CharParser st Datatype
+lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 var)) <*> ((reservedOp "->") *> expression)
 
 -- some really trivial functions
 

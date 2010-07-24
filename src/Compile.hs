@@ -55,7 +55,7 @@ getVars allowed exp
         | (isApp exp) = uFold $ (getVars allowed (appName exp)) : (map (\y -> getVars allowed y) (appArgs exp))
         | (isDatatype exp) && (isTupel (dataType exp)) = uFold (map (\y -> getVars allowed y) (tupelValue (dataType exp)))
         | (isDatatype exp) && (isList (dataType exp)) = uFold (map (\y -> getVars allowed y) (listValue (dataType exp)))
-        | (isLambda exp) = usedVars allowed exp
+        | (isDatatype exp) && (isLambda (dataType exp)) = usedVars allowed exp
         | (isFunction exp) = g (usedVars allowed exp) (map (usedVars leftSide) (funcWhere exp))
         | otherwise = Right ([], [])
         where
@@ -108,7 +108,7 @@ usedFunc (Right allowed) exp
         | ((isFun exp) || (isOp exp)) = Left [CompileError "NameError" (position exp) ("function '" ++ (value exp) ++ "' not defined")]
         | (isDatatype exp) && (isTupel (dataType exp)) = uFold (map recursive (tupelValue (dataType exp)))
         | (isDatatype exp) && (isList (dataType exp)) = uFold (map recursive (listValue (dataType exp)))
-        | (isLambda exp) = recursive (body exp)
+        | (isDatatype exp) && (isLambda (dataType exp)) = recursive (lambdaBody (dataType exp))
         | otherwise = Right (allowed, [])
         where
         recursive = usedFunc (Right allowed)

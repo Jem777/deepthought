@@ -19,6 +19,7 @@ data Datatype = --primitve datatypes and lists and tupels
             | String String
             | Char Char
             | Atom String
+            | Lambda [Expression] Expression -- [Expr] are the arguments, Expr is the Body -- is a datatype
             deriving (Show, Eq)
 
 data Expression = -- everything that evals to an datatype
@@ -27,7 +28,6 @@ data Expression = -- everything that evals to an datatype
             | Operator SourcePos String
             | Application SourcePos Expression [Expression]
             -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
-            | Lambda SourcePos [Expression] Expression -- [Expr] are the arguments, Expr is the Body -- is a datatype
             | Function SourcePos Expression [Expression] Expression Expression [Expression] 
             --first is the ident, second the args, third the guard, fourth the body, fifth closures
             | Datatype SourcePos Datatype
@@ -59,7 +59,6 @@ instance Eq Expression where
     (Fun _ a) == (Fun _ b) = a == b
     (Operator _ a) == (Operator _ b) = a == b
     (Application _ a b) == (Application _ a' b') = a == a' && b == b'
-    (Lambda _ a b) == (Lambda _ a' b') = a == a' && b == b'
     (Function _ a b c d e) == (Function _ a' b' c' d' e') = a == a' && b == b' && c == c' && d == d' && e == e'
     (Datatype _ a) == (Datatype _ b) = a == b
     Wildcard == Wildcard = True
@@ -80,8 +79,8 @@ treeFuncs (Tree _ _ _ _ a) = a
 varName (Variable _ a) = a
 appName (Application _ a _) = a
 appArgs (Application _ _ a) = a
-lambdaArgs (Lambda _ a _) = a
-lambdaBody (Lambda _ _ a) = a
+lambdaArgs (Lambda a _) = a
+lambdaBody (Lambda _ a) = a
 funcName (Function _ a _ _ _ _) = a
 funcArgs (Function _ _ a _ _ _) = a
 funcGuard (Function _ _ _ a _ _) = a
@@ -103,7 +102,7 @@ isOp (Operator _ _) = True
 isOp _ = False
 isApp (Application _ _ _) = True
 isApp _ = False
-isLambda (Lambda _ _ _) = True
+isLambda (Lambda _ _) = True
 isLambda _ = False
 isFunction (Function _ _ _ _ _ _) = True
 isFunction _ = False
@@ -112,10 +111,10 @@ isDatatype _ = False
 isWildcard Wildcard = True
 isWildcard _ = False
 
-args (Lambda _ a _) = a
 args (Function _ _ a _ _ _) = a
-body (Lambda _ _ a) = a
+args (Datatype _ (Lambda a _)) = a
 body (Function _ _ _ _ a _) = a
+body (Datatype _ (Lambda _ a)) = a
 
 listValue (List a) = a
 tupelValue (Tupel a) = a
@@ -127,7 +126,6 @@ position (Fun a _) = a
 position (Operator a _) = a
 position (Variable a _) = a
 position (Application a _ _) = a
-position (Lambda a _ _) = a
 position (Function a _ _ _ _ _) = a
 position (Datatype a _) = a
 position Wildcard = undefined

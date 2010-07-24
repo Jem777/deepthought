@@ -66,11 +66,11 @@ complex_vars = ("complex variable checks", checkVars, [
     (
         "F . G -> (\\Y -> F (G Y));",
         Right [],
-        Function testEmptyPos (Operator testEmptyPos ".") [Variable testEmptyPos "F",Variable testEmptyPos "G"] Wildcard (Lambda testEmptyPos [Variable testEmptyPos "Y"] (Application testEmptyPos (Variable testEmptyPos "F") [Application testEmptyPos (Variable testEmptyPos "G") [Variable testEmptyPos "Y"]])) []),
+        Function testEmptyPos (Operator testEmptyPos ".") [Variable testEmptyPos "F",Variable testEmptyPos "G"] Wildcard (Datatype testEmptyPos (Lambda [Variable testEmptyPos "Y"] (Application testEmptyPos (Variable testEmptyPos "F") [Application testEmptyPos (Variable testEmptyPos "G") [Variable testEmptyPos "Y"]]))) []),
     (
         "F . G -> (\\Y,X -> F (G Y));",
         Right [Variable testEmptyPos "X"],
-        Function testEmptyPos (Operator testEmptyPos ".") [Variable testEmptyPos "F",Variable testEmptyPos "G"] Wildcard (Lambda testEmptyPos [Variable testEmptyPos "Y", Variable testEmptyPos "X"] (Application testEmptyPos (Variable testEmptyPos "F") [Application testEmptyPos (Variable testEmptyPos "G") [Variable testEmptyPos "Y"]])) []),
+        Function testEmptyPos (Operator testEmptyPos ".") [Variable testEmptyPos "F",Variable testEmptyPos "G"] Wildcard (Datatype testEmptyPos (Lambda [Variable testEmptyPos "Y", Variable testEmptyPos "X"] (Application testEmptyPos (Variable testEmptyPos "F") [Application testEmptyPos (Variable testEmptyPos "G") [Variable testEmptyPos "Y"]]))) []),
     (
         "fail X Y -> a + b where (a -> X * 2; b Y -> Y *3;)",
         Left [CompileError "Conflicting Definitions" testEmptyPos ""],

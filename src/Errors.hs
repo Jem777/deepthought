@@ -8,4 +8,4 @@ varUnbound x = CompileError "NameError" (position x) ("Variable " ++ (show x) ++
 
 --runtime exceptions
 typeException pos opName x y = CompileError "TypeError" pos ("unsupported types for " ++ opName ++ ": " ++ (show x) ++ " and " ++ (show y) ++ "\n")
-nameException pos opName = CompileError "NameError" pos ("function " ++ (value opName) ++ "not found")
+nameException pos opName = CompileError "NameError" pos ("function " ++ (value opName) ++ " not found")
