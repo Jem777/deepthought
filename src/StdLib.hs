@@ -3,19 +3,12 @@ module StdLib where
 import Types
 import Errors
 import Data.List
-import Control.Applicative
-import Control.Monad (MonadPlus(..), ap)
+import Data.Either (lefts, rights)
+import Control.Monad (ap, mapM)
 
-{-
-eval :: State -> Expression -> Either [CompileError] (m Datatype)
---eval state (Application pos fun args) = apply (translate_fun fun) state pos fun args
-eval a b = io_out (Atom "foo")
--}
 -- the functions
 
 
-goRight = return . Right
-goLeft = return . Left
 
 --add :: SourcePos -> Datatype -> Datatype -> Either [CompileError] Datatype
 add _ (List a) (List b) = goRight (List (a ++ b))
@@ -37,10 +30,10 @@ sub _ (Float a) (Float b) = goRight (Float (a - b))
 sub _ (String a) (String b) = goRight (String (a \\ b))
 sub pos x y = goLeft [typeException pos "-" x y]
 
-neg :: SourcePos -> Datatype -> Either [CompileError] Datatype
-neg _ (Number a) = Right (Number (negate a))
-neg _ (Float a) = Right (Float (negate a))
-neg pos _ = Left [CompileError "TypeError" pos "asdf"]
+neg :: SourcePos -> [Datatype] -> IO (Either [CompileError] Datatype)
+neg _ [Number a] = goRight (Number (negate a))
+neg _ [Float a] = goRight (Float (negate a))
+neg pos x = goLeft [typeException pos "negate" "f" "g"]
 
 mul _ (List a) (Number b) = goRight (List (concat (replicate (fromInteger b) a)))
 mul _ (Tupel a) (Number b) = goLeft [CompileError "TypeError" testEmptyPos ""] -- has to be evaled first
@@ -63,38 +56,38 @@ printf _ (String a) _ = do_io print a
 printf _ (Float a) _ = do_io print a
 printf _ (Char a) _ = do_io print a
 printf _ (Atom a) _ = do_io print a
-printf pos x y = (return . Left) [typeException pos "print" x y]
+printf pos x y = goLeft [typeException pos "print" x y]
 
-do_io f x = f x >> return (Right (Atom "@true"))
+do_io f x = f x >> goRight (Atom "@true")
 --listconstructor ()
 
 
-eval state (Application pos fun args) = apply (translate_fun fun) state pos fun args
-eval _ (Datatype _ x) = (return . Right) x
-eval a b = (return . Right) (Atom "foo")
+eval state (Application pos fun args) = apply (translateFun fun) state pos fun args
+eval _ (Datatype _ x) = goRight x
+eval a b = goRight (Atom "foo")
 
 
-apply Nothing _ p fun _ = (return . Left) [nameException p fun]
-apply (Just f) state pos fun (arg1:arg2:args) = (apply2 pos) state f arg1 arg2
+apply Nothing _ p fun _ = goLeft [nameException p fun]
+apply (Just f) state pos fun args = (apply2 pos) state f args
 
-apply2 pos state fun arg1 arg2 = (evaluate arg2) >>= (\y -> (evaluate arg1) >>= (\x -> g x y))
+apply2 pos state fun args = (mapM evaluate args) >>= help (fun pos)
     where
-    g a1 a2 = help (fun pos) a1 a2 --((return help) >>= (fun pos))
     evaluate x = (return x) >>= (eval state)
-    help :: (Datatype -> Datatype -> (IO (Either [CompileError] Datatype))) -> Either [CompileError] Datatype -> Either [CompileError] Datatype -> IO (Either [CompileError] Datatype)
-    help f (Right x) (Right y) = f x y
-    help _ (Left x) (Left y) = (return . Left) (x ++ y)
-    help _ (Left x) _ = (return . Left) x
-    help _ _ (Left x) = (return . Left) x
+    help f l
+        | (lefts l == []) = f (rights l)
+        | otherwise = goLeft (concat (lefts l))
 
---translate_fun fun = lookup (value fun) fun_list
-translate_fun fun = lookup (value fun) functionList
+translateFun fun = lookup (value fun) functionList
 
 pureFunctions = [("+", add), ("-", sub), ("*", mul), ("/", division)]
 impureFunctions = [("print", printf)]
-functionList = (pureFunctions ++ impureFunctions)
+--functionList = (pureFunctions ++ impureFunctions)
+functionList = [("neg", neg)]
 
 -- internal functions
+
+goRight = return . Right
+goLeft = return . Left
 
 tupelAdd [] [] = Right (Tupel [])
 tupelAdd a b | (length a) == (length b) = Right (Tupel (a ++ b))
