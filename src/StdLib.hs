@@ -60,9 +60,13 @@ printf _ [Number a] = do_io print a
 printf _ [String a] = do_io print a
 printf _ [Float a] = do_io print a
 printf _ [Char a] = do_io print a
-printf _ [Atom a] = do_io print a
+printf _ [Atom a] = do_io putStrLn a
 printf pos x | (length x) > 1 = goLeft [tooMuchArguments pos "print" 1 (length x)]
              | otherwise = goLeft [typeException pos "print" x]
+
+printStr _ [String a] = do_io putStrLn a
+printStr pos x | (length x) > 1 = goLeft [tooMuchArguments pos "printStr" 1 (length x)]
+             | otherwise = goLeft [typeException pos "printStr" x]
 
 do_io f x = f x >> goRight (Atom "@ok")
 --listconstructor ()
@@ -86,7 +90,7 @@ apply2 pos state fun args = (mapM evaluate args) >>= help (fun pos)
 translateFun fun = lookup (value fun) functionList
 
 pureFunctions = [("+", add), ("-", sub), ("neg", neg), ("*", mul), ("/", division)]
-impureFunctions = [("print", printf)]
+impureFunctions = [("print", printf), ("printStr", printStr)]
 functionList = (pureFunctions ++ impureFunctions)
 --functionList = [("neg", neg)]
 
