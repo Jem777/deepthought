@@ -4,6 +4,7 @@ import Types
 import Errors
 import Data.List
 import Data.Either (lefts, rights)
+import Data.Maybe (fromJust)
 import Control.Monad (ap, mapM)
 
 -- the functions
@@ -74,6 +75,9 @@ do_io f x = f x >> goRight (Atom "@ok")
 
 eval state (Application pos fun args) = apply (translateFun fun) state pos fun args
 eval _ (Datatype _ x) = goRight x
+eval state (Variable pos str)
+    | getVariable state (Variable pos str) == Nothing = goLeft [CompileError "asdf" pos ("variable " ++ str ++ " unbound")]
+    | otherwise = (goRight . fromJust) (getVariable state (Variable pos str))
 eval a b = goRight (Atom "foo")
 
 
