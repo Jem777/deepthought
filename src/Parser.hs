@@ -18,6 +18,7 @@ import Types
 import Expr
 
 parser = parseFromFile deepthought
+testparse = parse
 
 formatError :: ParseError -> CompileError
 formatError a = CompileError 

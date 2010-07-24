@@ -57,18 +57,27 @@ printf _ (Number a) _ = putStrLn (show a)
 --listconstructor ()
 
 
-eval :: (Monad m) => State -> Expression -> m (Either [CompileError] Datatype)
+--eval :: (Monad m) => State -> Expression -> m (Either [CompileError] Datatype)
 eval state (Application pos fun args) = apply (translate_fun fun) state pos fun args
+eval _ (Datatype _ x) = (return . Right) x
 eval a b = (return . Right) (Atom "foo")
 
 
 apply Nothing _ p fun _ = return (Left [nameException p fun])
 apply (Just f) state pos fun (arg1:arg2:args) = (apply2 pos) state f arg1 arg2
 
-apply2 pos state fun arg1 arg2 = (fun pos) `fmap` (h ap (eval state) arg1) `ap` (h ap (eval state) arg2)
+{-apply2 ::
+    (Monad m, Functor m) =>
+    SourcePos ->
+    State ->
+    (SourcePos -> Datatype -> Datatype -> Either [CompileError] Datatype) ->
+    Expression ->
+    Expression ->
+    m (Either [CompileError] Datatype)
+-}
+apply2 pos state fun arg1 arg2 = (help (fun pos)) `fmap` (evaluate arg1) `ap` (evaluate arg2)
     where
-    h f a (Right b) = Right (f a b)
-    h _ _ (Left b) = Left b
+    evaluate x = (return x) >>= (eval state)
     help f (Right x) (Right y) = f x y
     help _ (Left x) (Left y) = Left (x ++ y)
     help _ (Left x) _ = Left x

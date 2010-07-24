@@ -69,6 +69,7 @@ instance Eq Expression where
 -- a lot of trivial functions for using the types
 
 testEmptyPos = P.newPos "" 0 0
+testEmptyState = State [] [] []
 
 treeName (Tree a _ _ _ _) = a
 treeCompile (Tree _ a _ _ _) = a
