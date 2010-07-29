@@ -30,7 +30,7 @@ table   = [
 binary  name = Infix (posOp name >>= (\p -> return (\x y -> op_to_expr p name [x,y])))
 prefix  name = Prefix (posOp name >>= (\p -> return (\y -> prefixop_to_expr p name [y])))
 postfix name = Postfix (posOp name >>= (\p -> return (\y -> op_to_expr p name [y])))
-binFunc name = Infix (f >>= (\p -> return (\x y -> (Application p (Fun p name) [x,y]))))
+binFunc name = Infix (f >>= (\p -> return (\x y -> (Application p (Operator p name) [x,y]))))
         where f = getPosition <* (reservedOp name)
 
 posOp name = getPosition <* (reservedOp name)
@@ -112,9 +112,9 @@ list x = List <$> squares (commaSep x)
 tupel x = Tupel <$> parens (commaSep x)
 
 -- expressions
-bareFun = Fun <$> getPosition <*> funcId 
+bareFun = Operator <$> getPosition <*> funcId
 bareOp = Operator <$> getPosition <*> operator
-qualifiedFun = Fun <$> getPosition <*> ((endBy1 upperId2 (string moduleOp)) *> funcId)
+qualifiedFun = Operator <$> getPosition <*> ((endBy1 upperId2 (string moduleOp)) *> funcId)
 qualifiedOp = Operator <$> getPosition <*> ((endBy1 upperId2 (string moduleOp)) *> operator)
 fun = bareFun <|> qualifiedFun
 op = bareOp <|> qualifiedOp
@@ -132,7 +132,7 @@ op_to_expr pos name = Application pos (Operator pos name)
 prefixop_to_expr :: SourcePos -> String -> [Expression] -> Expression
 prefixop_to_expr pos name = Application pos (convert name)
     where
-    convert "+" = Fun pos "id"
-    convert "-" = Fun pos "neg"
+    convert "+" = Operator pos "id"
+    convert "-" = Operator pos "neg"
     convert x = Operator pos x
 

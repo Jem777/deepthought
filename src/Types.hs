@@ -24,7 +24,6 @@ data Datatype = --primitve datatypes and lists and tupels
 
 data Expression = -- everything that evals to an datatype
             Variable SourcePos String
-            | Fun SourcePos String
             | Operator SourcePos String
             | Application SourcePos Expression [Expression]
             -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
@@ -56,7 +55,6 @@ instance Eq CompileError where
 
 instance Eq Expression where
     (Variable _ a) == (Variable _ b) = a == b
-    (Fun _ a) == (Fun _ b) = a == b
     (Operator _ a) == (Operator _ b) = a == b
     (Application _ a b) == (Application _ a' b') = a == a' && b == b'
     (Function _ a b c d e) == (Function _ a' b' c' d' e') = a == a' && b == b' && c == c' && d == d' && e == e'
@@ -98,7 +96,6 @@ funcGuard (Function _ _ _ a _ _) = a
 funcBody (Function _ _ _ _ a _) = a
 funcWhere (Function _ _ _ _ _ a) = a
 opName (Operator _ a) = a
-funName (Fun _ a) = a
 dataType (Datatype _ a) = a
 
 isList (List _) = True
@@ -107,8 +104,6 @@ isTupel (Tupel _) = True
 isTupel _ = False
 isVar (Variable _ _) = True
 isVar _ = False
-isFun (Fun _ _) = True
-isFun _ = False
 isOp (Operator _ _) = True
 isOp _ = False
 isApp (Application _ _ _) = True
@@ -131,9 +126,7 @@ listValue (List a) = a
 tupelValue (Tupel a) = a
 
 value (Operator _ a) = a
-value (Fun _ a) = a
 
-position (Fun a _) = a
 position (Operator a _) = a
 position (Variable a _) = a
 position (Application a _ _) = a

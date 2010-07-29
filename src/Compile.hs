@@ -104,8 +104,8 @@ usedFunc :: Either [CompileError] [Expression] -> Expression -> Either [CompileE
 usedFunc (Left x) _ = Left x
 usedFunc (Right allowed) exp
         | (isApp exp) = uFold $ (recursive (appName exp)) : (map recursive (appArgs exp))
-        | ((isFun exp) || (isOp exp)) && (elem exp allowed) = Right (allowed, [exp])
-        | ((isFun exp) || (isOp exp)) = Left [CompileError "NameError" (position exp) ("function '" ++ (value exp) ++ "' not defined")]
+        | (isOp exp) && (elem exp allowed) = Right (allowed, [exp])
+        | (isOp exp) = Left [CompileError "NameError" (position exp) ("function '" ++ (value exp) ++ "' not defined")]
         | (isDatatype exp) && (isTupel (dataType exp)) = uFold (map recursive (tupelValue (dataType exp)))
         | (isDatatype exp) && (isList (dataType exp)) = uFold (map recursive (listValue (dataType exp)))
         | (isDatatype exp) && (isLambda (dataType exp)) = recursive (lambdaBody (dataType exp))
@@ -163,4 +163,4 @@ sFold l
 right (Right x) = x
 left (Left x) = x
 
-testing = [Function testEmptyPos (Fun testEmptyPos "f") [Variable testEmptyPos "X"] Wildcard (Variable testEmptyPos "X") []]
+testing = [Function testEmptyPos (Operator testEmptyPos "f") [Variable testEmptyPos "X"] Wildcard (Variable testEmptyPos "X") []]
