@@ -5,6 +5,7 @@ import Parser
 
 import Data.List
 import Data.Either
+import Misc
 
 
 -- this module checks whether the semantics are correct
@@ -42,10 +43,9 @@ usedVars allowed exp = used leftSide rightSide
         where 
         leftSide = varArgs allowed exp
         rightSide x = getVars x (body exp)
-        used (Left l) _ = Left l
-        used (Right l) r = f l (r l)
-        f _ (Left r) = Left r
-        f l (Right (r1,r2)) = Right (union l r1,r2) --concats the left side with the varArgs of the body
+        used left right = either Left (\l -> f l (right l)) left
+        f left = eitherRight (\(r1,r2) -> (union left r1,r2))
+        --concats the left side with the varArgs of the body
 
 -- getVars allowedVars expression = usedVars
 getVars :: [Expression] -> Expression -> Either [CompileError] ([Expression], [Expression])
@@ -59,18 +59,14 @@ getVars allowed exp
         | (isFunction exp) = g (usedVars allowed exp) (map (usedVars leftSide) (funcWhere exp))
         | otherwise = Right ([], [])
         where
-        g (Left x) _ = Left x
-        g x xs = uFold (x:xs)
+        g x xs = either Left (const (uFold (x:xs))) x
         leftSide = right (varArgs allowed exp) --TODO: test this (right is unsafe)
 
 unusedVars :: Either [CompileError] ([Expression], [Expression]) -> Either [CompileError] [Expression]
 unusedVars (Left x) = Left x
 unusedVars (Right (allowed, used)) = Right (filterUnused allowed used)
 
-varArgs allowed exp = f (sFold (map (getVarArgs allowed) (args exp))) allowed
-        where
-        f (Right x) y = Right (union x y)
-        f (Left x) _ = Left x 
+varArgs allowed exp = (\a b -> eitherRight (flip union b) a) (sFold (map (getVarArgs allowed) (args exp))) allowed
 
 getVarArgs :: [Expression] -> Expression -> Either [CompileError] [Expression]
 getVarArgs allowed exp
@@ -90,8 +86,7 @@ checkFuncs = unusedFuncs (Right [])
 unusedFuncs (Left x) _ = Left x --probably not needed
 unusedFuncs (Right imports) funcs = (filt . uFold) (map (getFunc allowed) funcs)
         where
-        filt (Left x) = Left x
-        filt (Right (a,b)) = Right (filterUnused a b)
+        filt = eitherRight (\(a,b) -> filterUnused a b)
         allowed = allowedFuncs imports funcs
 
 getFunc :: Either [CompileError] [Expression] -> Expression -> Either [CompileError] ([Expression], [Expression])
@@ -116,8 +111,7 @@ usedFunc (Right allowed) exp
 allowedFuncs a exp = allowed funcNames
         where
         funcNames = getFunctionNames a exp
-        allowed (Left x) = Left x
-        allowed (Right x) = Right (union a x)
+        allowed = eitherRight (\x -> union a x)
 
 ----------------
 -- check tree --
