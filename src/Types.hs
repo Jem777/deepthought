@@ -41,8 +41,8 @@ data Tree = Tree String [String] [Expression] [([String], String)] [Expression] 
 data CompileError = CompileError String SourcePos String --kind of Error, SourcePos, Message
 
 data State =
-    State [(String, Tree)] [(Expression, Expression)] [(Expression, Datatype)]
-    -- arguemts are imported modules, functions and variables
+    State [(String, Tree)] [(String, Expression)] [(String, Datatype)]
+    -- arguments are imported modules, functions and variables
 
 type SourcePos = P.SourcePos
 -- instances for the types -  SourcePos is irrelevant to equalency
@@ -73,9 +73,6 @@ testEmptyState = State [] [] []
 getVariable (State _ _ a) b = lookup b a
 getFunction (State _ a _) b = lookup b a
 getTree (State a _ _) b = lookup b a
-
-addToState :: State -> [Expression] -> [Expression] -> State
-addToState state pattern arguments -> state
 
 -- functions for the tree
 
