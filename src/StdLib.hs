@@ -109,7 +109,7 @@ eval state (Variable pos str)
 eval a b = goRight (Atom "foo")
 
 apply Nothing _ p fun _ = goLeft [nameException p fun]
-apply (Just f) state pos _ args = (mapM (eval state) args) >>= (fun pos state)
+apply (Just fun) state pos _ args = (mapM (eval state) args) >>= (fun pos state)
 
 translateFun fun = lookup (value fun) functionList
 

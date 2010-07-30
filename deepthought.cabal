@@ -1,0 +1,17 @@
+Name:               deepthought
+Version:            0.0
+Cabal-Version:      >= 1.2
+build-type:         Custom
+Synopsis:           Interpreter of a dynamic functional programming language
+Description:        Compiles and interpretes a new programming 
+                    language also called deepthought.
+License:            GPL-3
+License-file:       LICENSE
+Author:             Moritz Doll
+Maintainer:         Moritz Doll <Clifford_Burton@web.de>
+
+Executable dt
+    Build-Depends:      base, parsec
+    hs-source-dirs:     src
+    Main-is:            Interpreter.hs
+    Other-Modules:      ApplicativeParsec, Compile, Errors, Expr, Lexer, Misc, Parser, StdLib, Types
