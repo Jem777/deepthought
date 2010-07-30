@@ -1,9 +1,9 @@
 module Types
     where
 
+import Data.List
 import qualified Text.ParserCombinators.Parsec.Pos as P
 
---
 -- definition of all necessary types for parsing
 -- and types for an intermediate byte-code
 --
@@ -20,7 +20,7 @@ data Datatype = --primitve datatypes and lists and tupels
             | Char Char
             | Atom String
             | Lambda [Expression] Expression -- [Expr] are the arguments, Expr is the Body -- is a datatype
-            deriving (Show, Eq)
+            deriving (Eq)
 
 data Expression = -- everything that evals to an datatype
             Variable SourcePos String
@@ -45,7 +45,26 @@ data State =
     -- arguments are imported modules, functions and variables
 
 type SourcePos = P.SourcePos
+
+newtype (Monad m) => EitherErr m a = EitherErr { runEitherErr :: m (Either [CompileError] a)}
 -- instances for the types -  SourcePos is irrelevant to equalency
+
+instance (Monad m) => Monad (EitherErr m) where
+    return = EitherErr . return . Right
+    x >>= f = EitherErr (runEitherErr x >>= either (return . Left) (runEitherErr . f))
+
+instance (Monad m) => Functor (EitherErr m) where
+    fmap f x = EitherErr (runEitherErr x >>= either (return . Left) (return . Right . f))
+
+instance Show Datatype where
+    show (List a) = show a
+    show (Tupel a) = "(" ++ intercalate "," (map show a) ++ ")"
+    show (Number a) = show a
+    show (Float a) = show a
+    show (String a) = show a
+    show (Char a) = show a
+    show (Atom a) = a
+
 
 instance Show CompileError where
     show (CompileError a b c) = a ++ " at " ++ show b ++ ":\n" ++ c
