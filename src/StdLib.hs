@@ -4,7 +4,7 @@ module StdLib where
 import Data.List
 import Data.Either (lefts, rights, either)
 import Data.Maybe (fromJust)
-import Control.Monad (ap, mapM, foldM)
+import Control.Monad
 import Control.Applicative ((<$>), (<*>))
 
 -- Deepthought Imports
@@ -41,10 +41,15 @@ sub pos _ x
         | (length x) > 2 = goLeft [tooMuchArguments pos "-" 2 (length x)]
         | otherwise = goLeft [typeException pos "-" x]
 
-neg :: SourcePos -> State -> [Datatype] -> IO (Either [CompileError] Datatype)
 neg _ _ [Number a] = goRight (Number (negate a))
 neg _ _ [Float a] = goRight (Float (negate a))
 neg pos _ x
+        | (length x) > 1 = goLeft [tooMuchArguments pos "negate" 1 (length x)]
+        | otherwise = goLeft [typeException pos "negate" x]
+
+abs _ _ [Number a] | a > 0 = goRight (Number a) | otherwise = goRight (Number (negate a))
+abs _ _ [Float a] = goRight (Float (negate a))
+abs pos _ x
         | (length x) > 1 = goLeft [tooMuchArguments pos "negate" 1 (length x)]
         | otherwise = goLeft [typeException pos "negate" x]
 
@@ -72,7 +77,8 @@ listconstructor pos _ x
         | (length x) > 2 = goLeft [tooMuchArguments pos ":" 2 (length x)]
         | otherwise = goLeft [typeException pos ":" x]
 
-printf pos state [List a] = eitherFold (++)
+
+--printf pos state [List a] = eitherFold (++)
 printf _ _ [Number a] = do_io print a
 printf _ _ [String a] = do_io print a
 printf _ _ [Float a] = do_io print a
@@ -87,16 +93,13 @@ printStr pos _ x
         | (length x) > 1 = goLeft [tooMuchArguments pos "printStr" 1 (length x)]
         | otherwise = goLeft [typeException pos "printStr" x]
 
-do_io f x = f x >> goRight (Atom "@ok")
+do_io f x = EitherErr (f x >> ((return . Right) (Atom "@ok")))
 
-
-
-simplify :: State -> (Expression, Expression) -> IO (Either [CompileError] [(String, Datatype)])
-simplify state (Variable _ string, expression) =
-    (eval state expression) >>= 
-    (return . (either Left (\datatype -> Right [(string, datatype)])))
+simplify :: State -> (Expression, Expression) -> EitherErr IO [(String, Datatype)]
+simplify state (Variable _ string, expression) = eval state expression >>= \datatype -> goRight [(string, datatype)]
 simplify state (pattern, application) = goLeft []
 
+eval :: State -> Expression -> EitherErr IO Datatype
 --eval state (Application pos (Lambda x y) args) = lambda state pos x y args
 eval state (Application pos fun args) = apply (translateFun fun) state pos fun args
 eval _ (Datatype _ x) = goRight x
@@ -106,14 +109,7 @@ eval state (Variable pos str)
 eval a b = goRight (Atom "foo")
 
 apply Nothing _ p fun _ = goLeft [nameException p fun]
-apply (Just f) state pos fun args = (apply2 pos) state f args
-
-apply2 pos state fun args = (mapM evaluate args) >>= help (fun pos state)
-    where
-    evaluate x = (return x) >>= (eval state)
-    help f l
-        | (lefts l == []) = f (rights l)
-        | otherwise = goLeft (concat (lefts l))
+apply (Just f) state pos _ args = (mapM (eval state) args) >>= (fun pos state)
 
 translateFun fun = lookup (value fun) functionList
 
@@ -123,8 +119,9 @@ functionList = (pureFunctions ++ impureFunctions)
 
 -- internal functions
 
-goRight = return . Right
-goLeft = return . Left
+goRight :: a -> EitherErr IO a
+goRight = EitherErr . return . Right
+goLeft = EitherErr . return . Left
 
 --tuplef _ _ _ [] = goRight (Tupel [])
 --tuplef pos state f argMatrix = foldM help (Right (Tupel [])) (map (\argList -> mapM (eval state) argList >>= (eFold (f pos state))) (transpose argMatrix))
@@ -134,9 +131,9 @@ goLeft = return . Left
 --help x y = y >>= (mapEither (\a b -> Tupel ((Datatype a):b)) x)
 
 --eitherFold _ [] = Right []
-eFold f l
-    | (not . null) (lefts l) = goLeft (foldl1 (++) (lefts l))
-    | otherwise = (f (rights l))
+--eFold f l
+--    | (not . null) (lefts l) = goLeft (foldl1 (++) (lefts l))
+--    | otherwise = (f (rights l))
 
 
 --reportTypeError :: String -> [Datatype] -> CompileError
