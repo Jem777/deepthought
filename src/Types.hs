@@ -11,9 +11,9 @@ import qualified Text.ParserCombinators.Parsec.Pos as P
 -- support for qualified operators and functions
 -- add type RuntimeException
 
-data Datatype = --primitve datatypes and lists and tupels
+data Datatype = --primitve datatypes and lists and Vectors
             List [Expression]
-            | Tupel [Expression]
+            | Vector [Expression]
             | Number Integer
             | Float Double
             | String String
@@ -60,7 +60,7 @@ instance (Monad m) => Functor (EitherErr m) where
 
 instance Show Datatype where
     show (List a) = show a
-    show (Tupel a) = "(" ++ intercalate "," (map show a) ++ ")"
+    show (Vector a) = "(" ++ intercalate "," (map show a) ++ ")"
     show (Number a) = show a
     show (Float a) = show a
     show (String a) = show a
@@ -118,8 +118,8 @@ dataType (Datatype _ a) = a
 
 isList (List _) = True
 isList _ = False
-isTupel (Tupel _) = True
-isTupel _ = False
+isVector (Vector _) = True
+isVector _ = False
 isVar (Variable _ _) = True
 isVar _ = False
 isOp (Operator _ _) = True
@@ -141,7 +141,7 @@ body (Function _ _ _ _ a _) = a
 body (Datatype _ (Lambda _ a)) = a
 
 listValue (List a) = a
-tupelValue (Tupel a) = a
+vectorValue (Vector a) = a
 
 value (Operator _ a) = a
 

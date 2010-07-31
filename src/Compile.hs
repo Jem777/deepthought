@@ -53,7 +53,7 @@ getVars allowed exp
         | (isVar exp) && (elem exp allowed) = Right ([], [exp])
         | (isVar exp) = Left [CompileError "Variable unbound" (position exp) "barbaz"]
         | (isApp exp) = uFold $ (getVars allowed (appName exp)) : (map (\y -> getVars allowed y) (appArgs exp))
-        | (isDatatype exp) && (isTupel (dataType exp)) = uFold (map (\y -> getVars allowed y) (tupelValue (dataType exp)))
+        | (isDatatype exp) && (isVector (dataType exp)) = uFold (map (\y -> getVars allowed y) (vectorValue (dataType exp)))
         | (isDatatype exp) && (isList (dataType exp)) = uFold (map (\y -> getVars allowed y) (listValue (dataType exp)))
         | (isDatatype exp) && (isLambda (dataType exp)) = usedVars allowed exp
         | (isFunction exp) = g (usedVars allowed exp) (map (usedVars leftSide) (funcWhere exp))
@@ -73,7 +73,7 @@ getVarArgs allowed exp
         | (isVar exp) && (elem exp allowed) = Left [CompileError "Conflicting Definitions" (position exp) "barbaz"]
         | (isVar exp) = Right [exp]
         | (isApp exp) = sFold (map (\y -> getVarArgs allowed y) (appArgs exp))
-        | (isDatatype exp) && (isTupel (dataType exp)) = sFold (map (\y -> getVarArgs allowed y) (tupelValue (dataType exp)))
+        | (isDatatype exp) && (isVector (dataType exp)) = sFold (map (\y -> getVarArgs allowed y) (vectorValue (dataType exp)))
         | (isDatatype exp) && (isList (dataType exp)) = sFold (map (\y -> getVarArgs allowed y) (listValue (dataType exp)))
         | otherwise = Right []
 
@@ -101,7 +101,7 @@ usedFunc (Right allowed) exp
         | (isApp exp) = uFold $ (recursive (appName exp)) : (map recursive (appArgs exp))
         | (isOp exp) && (elem exp allowed) = Right (allowed, [exp])
         | (isOp exp) = Left [CompileError "NameError" (position exp) ("function '" ++ (value exp) ++ "' not defined")]
-        | (isDatatype exp) && (isTupel (dataType exp)) = uFold (map recursive (tupelValue (dataType exp)))
+        | (isDatatype exp) && (isVector (dataType exp)) = uFold (map recursive (vectorValue (dataType exp)))
         | (isDatatype exp) && (isList (dataType exp)) = uFold (map recursive (listValue (dataType exp)))
         | (isDatatype exp) && (isLambda (dataType exp)) = recursive (lambdaBody (dataType exp))
         | otherwise = Right (allowed, [])

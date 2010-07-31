@@ -51,7 +51,7 @@ pattern =
     <|> var
     <|> (wildcard >> return Wildcard)
     <|> datatype (list pattern)
-    <|> datatype (tupel pattern)
+    <|> datatype (vector pattern)
     <?> "pattern"
 
 listconstructor = f <$> getPosition <*> colonSep pattern
@@ -79,7 +79,7 @@ expr =
     try (parens expression)
     <|> datatype primitive
     <|> datatype (list expression)
-    <|> datatype (tupel expression)
+    <|> datatype (vector expression)
     <|> var
     <|> fun
     <|> prefixOp
@@ -109,7 +109,7 @@ double = Float <$> float
 chr = Char <$> charLiteral
 
 list x = List <$> squares (commaSep x)
-tupel x = Tupel <$> parens (commaSep x)
+vector x = Vector <$> parens (commaSep x)
 
 -- expressions
 bareFun = Operator <$> getPosition <*> funcId
