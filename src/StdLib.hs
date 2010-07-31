@@ -19,7 +19,7 @@ import Misc
 --add :: SourcePos -> Datatype -> Datatype -> Either [CompileError] Datatype
 --add _ [x] = goRight (Lambda foo bar)
 add _ _ [List a, List b] = goRight (List (a ++ b))
---add pos state [Tupel a, Tupel b] = tuplef pos state add a b --goLeft [CompileError "TypeError" testEmptyPos ""] --tupelAdd a b
+add pos state [Tupel a, Tupel b] = tuplef pos state add [a,b]
 add _ _ [Number a, Number b] = goRight (Number (a + b))
 add _ _ [Float a, Number b] = goRight (Float (a + (fromInteger b)))
 add _ _ [Number a, Float b] = goRight (Float ((fromInteger a) + b))
@@ -31,7 +31,7 @@ add pos _ x
 
 --sub :: SourcePos -> Datatype -> Datatype -> Either [CompileError] Datatype
 sub _ _ [List a, List b] = goRight (List (a \\ b)) -- has the be evaled first
-sub _ _ [Tupel a, Tupel b] = goLeft [CompileError "TypeError" testEmptyPos ""]
+sub pos state [Tupel a, Tupel b] = tuplef pos state sub [a,b]
 sub _ _ [Number a, Number b] = goRight (Number (a - b))
 sub _ _ [Float a, Number b] = goRight (Float (a - (fromInteger b)))
 sub _ _ [Number a, Float b] = goRight (Float ((fromInteger a) - b))
@@ -54,7 +54,7 @@ abs pos _ x
         | otherwise = goLeft [typeException pos "negate" x]
 
 mul _ _ [List a, Number b] = goRight (List (concat (replicate (fromInteger b) a)))
-mul _ _ [Tupel a, Number b] = goLeft [CompileError "TypeError" testEmptyPos ""] -- has to be evaled first
+mul pos state [Tupel a, Number b] = tupleMul pos state mul a (Number b)
 mul _ _ [Number a, Number b] = goRight (Number (a * b))
 mul _ _ [Float a, Number b] = goRight (Float (a * (fromInteger b)))
 mul _ _ [Number a, Float b] = goRight (Float ((fromInteger a) * b))
@@ -123,18 +123,13 @@ goRight :: a -> EitherErr IO a
 goRight = EitherErr . return . Right
 goLeft = EitherErr . return . Left
 
---tuplef _ _ _ [] = goRight (Tupel [])
---tuplef pos state f argMatrix = foldM help (Right (Tupel [])) (map (\argList -> mapM (eval state) argList >>= (eFold (f pos state))) (transpose argMatrix))
---    where
+tuplef _ _ _ [] = goRight (Tupel [])
+tuplef pos state f argMatrix =
+    mapM (\argList -> mapM (eval state) argList >>= f pos state) (transpose argMatrix) >>=
+    goRight . Tupel . (map (Datatype pos))
 
---help :: (Monad m) => Either [a] Datatype -> m (Either [a] Datatype) -> m (Either [a] Datatype)
---help x y = y >>= (mapEither (\a b -> Tupel ((Datatype a):b)) x)
-
---eitherFold _ [] = Right []
---eFold f l
---    | (not . null) (lefts l) = goLeft (foldl1 (++) (lefts l))
---    | otherwise = (f (rights l))
-
+tupleMul _ _ _ [] _ = goRight (Tupel [])
+tupleMul pos state f argList c = mapM (eval state) argList >>= mapM (\x -> Datatype pos `fmap` (f pos state [x,c])) >>= goRight . Tupel
 
 --reportTypeError :: String -> [Datatype] -> CompileError
 

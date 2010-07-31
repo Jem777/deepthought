@@ -47,7 +47,9 @@ data State =
 type SourcePos = P.SourcePos
 
 newtype (Monad m) => EitherErr m a = EitherErr { runEitherErr :: m (Either [CompileError] a)}
--- instances for the types -  SourcePos is irrelevant to equalency
+
+
+-- instances for the types
 
 instance (Monad m) => Monad (EitherErr m) where
     return = EitherErr . return . Right
