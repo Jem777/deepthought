@@ -23,15 +23,32 @@ data Datatype = --primitve datatypes and lists and Vectors
             deriving (Eq)
 
 data Expression = -- everything that evals to an datatype
-            Variable SourcePos String
-            | Operator SourcePos String
-            | Application SourcePos Expression [Expression]
+            Variable {
+                position :: SourcePos,
+                varName :: String}
+            | Operator {
+                position :: SourcePos,
+                value :: String}
+            | Application {
+                position :: SourcePos,
+                appName :: Expression,
+                appArgs :: [Expression]}
             -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
-            | Function SourcePos Expression [Expression] Expression Expression [Expression] 
+            | Function {
+                position :: SourcePos,
+                funcName :: Expression,
+                funcArgs :: [Expression],
+                funcGuard :: Expression,
+                funcBody :: Expression,
+                funcWhere ::[Expression]}
             --first is the ident, second the args, third the guard, fourth the body, fifth closures
-            | Datatype SourcePos Datatype
+            | Datatype {
+                position :: SourcePos,
+                dataType :: Datatype}
             | Wildcard
             deriving (Show)
+
+data Definition = Definition SourcePos String [([Expression], Expression, Expression, [Definition])]
 
 data TreeObject = Expression (Integer, Integer) String Expression
 
@@ -103,18 +120,8 @@ treeExports (Tree _ _ a _ _) = a
 treeImports (Tree _ _ _ a _) = a
 treeFuncs (Tree _ _ _ _ a) = a
 
-varName (Variable _ a) = a
-appName (Application _ a _) = a
-appArgs (Application _ _ a) = a
 lambdaArgs (Lambda a _) = a
 lambdaBody (Lambda _ a) = a
-funcName (Function _ a _ _ _ _) = a
-funcArgs (Function _ _ a _ _ _) = a
-funcGuard (Function _ _ _ a _ _) = a
-funcBody (Function _ _ _ _ a _) = a
-funcWhere (Function _ _ _ _ _ a) = a
-opName (Operator _ a) = a
-dataType (Datatype _ a) = a
 
 isList (List _) = True
 isList _ = False
@@ -142,12 +149,3 @@ body (Datatype _ (Lambda _ a)) = a
 
 listValue (List a) = a
 vectorValue (Vector a) = a
-
-value (Operator _ a) = a
-
-position (Operator a _) = a
-position (Variable a _) = a
-position (Application a _ _) = a
-position (Function a _ _ _ _ _) = a
-position (Datatype a _) = a
-position Wildcard = undefined
