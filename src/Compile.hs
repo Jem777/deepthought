@@ -81,10 +81,10 @@ getVarArgs allowed exp
 -- check functions --
 ---------------------
 
-checkFuncs = unusedFuncs (Right [])
+checkFuncs = unusedFuncs []
 
-unusedFuncs (Left x) _ = Left x --probably not needed
-unusedFuncs (Right imports) funcs = (filt . uFold) (map (getFunc allowed) funcs)
+unusedFuncs :: [Expression] -> [Expression] -> Either [CompileError] [Expression]
+unusedFuncs imports funcs = (filt . uFold) (map (getFunc allowed) funcs)
         where
         filt = eitherRight (\(a,b) -> filterUnused a b)
         allowed = allowedFuncs imports funcs
@@ -94,6 +94,12 @@ getFunc (Left x) _ = Left x
 getFunc (Right a) exp = uFold ((usedFunc allowed (body exp)) : (map (getFunc allowed) (funcWhere exp)))
         where
         allowed = allowedFuncs a (funcWhere exp)
+{-
+getFunc2 :: [Expression] -> Expression -> Either [CompileError] ([Expression], [Expression])
+getFunc2 a exp = mapM (getFunc2 allowed) (funcWhere exp)
+        where
+        allowed = allowedFuncs a (funcWhere exp)
+-}
 
 usedFunc :: Either [CompileError] [Expression] -> Expression -> Either [CompileError] ([Expression], [Expression])
 usedFunc (Left x) _ = Left x
@@ -111,18 +117,17 @@ usedFunc (Right allowed) exp
 allowedFuncs a exp = allowed funcNames
         where
         funcNames = getFunctionNames a exp
-        allowed = eitherRight (\x -> union a x)
+        allowed = eitherRight (union a)
 
 ----------------
 -- check tree --
 ----------------
 
 -- takes a parsetree and checks exports - import-check not implemented yet -> []
-checkExports2 tree = checkExports tree (getFunctionNames [] (treeFuncs tree))
+checkExports2 tree = getFunctionNames [] (treeFuncs tree) >>= checkExports tree
 
-checkExports :: Tree -> Either [CompileError] [Expression] -> Either [CompileError] [Expression]
-checkExports _ (Left y) = Left y
-checkExports x (Right y) 
+checkExports :: Tree -> [Expression] -> Either [CompileError] [Expression]
+checkExports x y
         | isInfixOf y (treeExports x) = Left [CompileError "ExportError" (testEmptyPos) "exported a non existing function"]
         | otherwise = Right $ filterUnused (treeExports x) y
 
