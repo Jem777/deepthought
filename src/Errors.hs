@@ -11,4 +11,4 @@ nameException pos opName = CompileError "NameError" pos ("function " ++ (value o
 typeException :: SourcePos -> String -> [Datatype] -> CompileError
 typeException pos opName list = CompileError "TypeError" pos ("unsupported types for " ++ opName ++ ": " ++ (foldl1 (\x y -> x ++ " and " ++ y) (map show list)))
 tooMuchArguments pos opName exspected got =
-    CompileError "TypeError" pos (opName ++ "takes at most " ++ (show exspected) ++ " arguments (" ++ (show got) ++ " given)")
+    CompileError "TypeError" pos (opName ++ " takes at most " ++ (show exspected) ++ " arguments (" ++ (show got) ++ " given)")

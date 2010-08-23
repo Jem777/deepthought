@@ -2,6 +2,7 @@ module Types
     where
 
 import Data.List
+import Control.Monad
 import qualified Text.ParserCombinators.Parsec.Pos as P
 
 -- definition of all necessary types for parsing
@@ -58,15 +59,27 @@ data Tree = Tree String [String] [Expression] [([String], String)] [Expression] 
 data CompileError = CompileError String SourcePos String --kind of Error, SourcePos, Message
 
 data State =
-    State [(String, Tree)] [(String, Expression)] [(String, Datatype)]
+    State [(String, Tree)] [(String, Definition)] [(String, Datatype)]
     -- arguments are imported modules, functions and variables
 
 type SourcePos = P.SourcePos
 
 newtype (Monad m) => EitherErr m a = EitherErr { runEitherErr :: m (Either [CompileError] a)}
-
+newtype EitherList a = EitherList {runEitherList :: Either [CompileError] [a]}
 
 -- instances for the types
+instance Monad (Either a) where
+    return = Right
+    x >>= f = either Left f x
+
+
+instance Monad EitherList where
+    return = EitherList . Right . (:[])
+    --x >>= f = EitherList (either Left (runEitherList . map . f) (runEitherList x))
+    x >>= f = EitherList (either Left (runEitherList . f . head) (runEitherList x))
+
+instance Functor EitherList where
+    fmap f x = EitherList (either Left (Right . (map f)) (runEitherList x))
 
 instance (Monad m) => Monad (EitherErr m) where
     return = EitherErr . return . Right
@@ -75,9 +88,11 @@ instance (Monad m) => Monad (EitherErr m) where
 instance (Monad m) => Functor (EitherErr m) where
     fmap f x = EitherErr (runEitherErr x >>= either (return . Left) (return . Right . f))
 
+instance (Monad m) => MonadPlus (EitherErr m) where
+    mzero = (EitherErr . return . Left) []
+    mplus x y = EitherErr ((\a -> either (\b -> either (Left . (++b)) Right a) Right) `liftM` runEitherErr y `ap` runEitherErr x)
+
 instance Show Datatype where
-    show (List a) = show a
-    show (Vector a) = "(" ++ intercalate "," (map show a) ++ ")"
     show (Number a) = show a
     show (Float a) = show a
     show (String a) = show a
