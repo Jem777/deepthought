@@ -13,3 +13,12 @@ eitherFold _ _ [] = Right []
 eitherFold f g l
     | (not . null) (lefts l) = Left (foldl1 f (lefts l))
     | otherwise = Right (foldl1 g (rights l))
+
+ifElse True a _ = a
+ifElse False _ a = a
+
+maybeIf True a = Just a
+maybeIf False _ = Nothing
+
+maybeElse (Just a) _ = a
+maybeElse Nothing a = a

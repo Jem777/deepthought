@@ -9,12 +9,14 @@ import Control.Applicative ((<$>), (<*>))
 
 -- Deepthought Imports
 import Types
+import Eval
 import Errors
 import Misc
 
+
+class Argument a where
+    foo :: SourcePos -> State -> [a] -> EitherErr IO Datatype
 -- the functions
-
-
 
 --add :: SourcePos -> Datatype -> Datatype -> Either [CompileError] Datatype
 --add _ [x] = goRight (Lambda foo bar)
@@ -42,13 +44,13 @@ sub pos _ x
         | otherwise = goLeft [typeException pos "-" x]
 
 neg _ _ [Number a] = goRight (Number (negate a))
-neg _ _ [Float a] = goRight (Float (negate a))
+neg _ _ [Float a] = (goRight . Float . negate) a
 neg pos _ x
         | (length x) > 1 = goLeft [tooMuchArguments pos "negate" 1 (length x)]
         | otherwise = goLeft [typeException pos "negate" x]
 
 abs _ _ [Number a] | a > 0 = goRight (Number a) | otherwise = goRight (Number (negate a))
-abs _ _ [Float a] = goRight (Float (negate a))
+abs _ _ [Float a] | a > 0 = goRight (Float a) | otherwise = goRight (Float (negate a))
 abs pos _ x
         | (length x) > 1 = goLeft [tooMuchArguments pos "negate" 1 (length x)]
         | otherwise = goLeft [typeException pos "negate" x]
@@ -77,16 +79,7 @@ listconstructor pos _ x
         | (length x) > 2 = goLeft [tooMuchArguments pos ":" 2 (length x)]
         | otherwise = goLeft [typeException pos ":" x]
 
-
---printf pos state [List a] = eitherFold (++)
---printf _ state [List a] = evalArgs state a >>= return . (\y -> "(" ++ (intercalate "," y) ++ ")") . (mapM show)
-printf _ state [List a] = pretty state a "[" "]" >>= do_io putStrLn
-printf _ state [Vector a] = pretty state a "(" ")" >>= do_io putStrLn
-printf _ _ [Number a] = do_io print a
-printf _ _ [String a] = do_io print a
-printf _ _ [Float a] = do_io print a
-printf _ _ [Char a] = do_io print a
-printf _ _ [Atom a] = do_io putStrLn a
+printf _ state [x] = prettyShow state x >>= do_io putStrLn
 printf pos _ x
         | (length x) > 1 = goLeft [tooMuchArguments pos "print" 1 (length x)]
         | otherwise = goLeft [typeException pos "print" x]
@@ -98,27 +91,72 @@ printStr pos _ x
 
 do_io f x = EitherErr (f x >> (return . Right . Atom) "@ok")
 
-pretty state args open close = evalArgs state args >>= return . (\y -> open ++ (intercalate "," y) ++ close) . (map show)
+prettyShow state (List args) = evalArgs state args >>= mapM (prettyShow state) >>= parens "[" "]"
+prettyShow state (Vector args) = evalArgs state args >>= mapM (prettyShow state) >>= parens "(" ")"
+prettyShow _ (Number a) = (goRight . show) a
+prettyShow _ (Float a) = (goRight . show) a
+prettyShow _ (String a) = (goRight . show) a
+prettyShow _ (Char a) = (goRight . show) a
+prettyShow _ (Atom a) = goRight a
 
-simplify :: State -> (Expression, Expression) -> EitherErr IO [(String, Datatype)]
-simplify state (Variable _ string, expression) = eval state expression >>= \datatype -> goRight [(string, datatype)]
+parens open close str = goRight (open ++ (intercalate "," str) ++ close)
+
+simplify :: State -> (Expression, Datatype) -> EitherErr IO [(String, Datatype)]
+simplify state (Variable _ string, datatype) = goRight [(string, datatype)]
+simplify state (Datatype _ (List a), List b) = merge state a b
+simplify state (Datatype _ (Vector a), Vector b) = merge state a b
+simplify state (Datatype _ datatype, datatype2) = ifElse (datatype == datatype2) (goRight []) (goLeft [])
 simplify state (pattern, application) = goLeft []
 
-eval :: State -> Expression -> EitherErr IO Datatype
---eval state (Application pos (Lambda x y) args) = lambda state pos x y args
-eval state (Application pos fun args) = apply (translateFun fun) state pos fun args
-eval _ (Datatype _ x) = goRight x
-eval state (Variable pos str)
-    | getVariable state str == Nothing = goLeft [CompileError "asdf" pos ("variable " ++ str ++ " unbound")]
-    | otherwise = (goRight . fromJust) (getVariable state str)
-eval a b = goRight (Atom "foo")
+merge state a b = evalArgs state b >>= \b1 -> concat <$> mapM (simplify state) (zip a b1)
 
-apply Nothing _ p fun _ = goLeft [nameException p fun]
-apply (Just fun) state pos _ args = evalArgs state args >>= fun pos state
+checkGuard _ Wildcard = goRight True
+checkGuard state expression = eval state expression >>= goRight . (Atom "@true"==)
 
-translateFun fun = lookup (value fun) functionList
+setState state args pattern = (addVariables state) . concat <$> mapM (simplify state) (zip pattern args)
+--setFunctionState state (Definition pos name patternList) = (\Definion a1 name a2 -> (name, Definion a1 name a2))addFunction state (name, Definition pos name patternList)
+--setFunctionState state patternList = addFunctions state
 
-pureFunctions = [("+", add), ("-", sub), ("neg", neg), ("*", mul), ("/", division), ("abs", StdLib.abs)]
+checkFunction state (args, pattern, guard, body) = setState state args pattern >>= \s -> checkGuard state guard
+evalPattern _ [] = goLeft []
+evalPattern state ((args, pattern, _, body):_) = evalLambda state args pattern body
+
+evalLambda state args pattern body = setState state args pattern >>= \s -> eval s body
+
+evalFunction state args functions = filterM (checkFunction state) functions >>= evalPattern state
+
+instance Evaluate Expression where
+    eval state (Application pos fun args) = evalArgs state args >>= exec fun pos state
+    eval _ (Datatype _ x) = goRight x
+    eval state (Variable pos str)
+        | getVariable state str == Nothing = goLeft [varUnbound (Variable pos str)]
+        | otherwise = (goRight . fromJust) (getVariable state str)
+
+instance Evaluate Datatype where
+    eval _ a = goRight a
+
+instance Execute Datatype where
+    exec (Lambda pattern body) pos state args = setState state args pattern >>= \s -> eval s body
+
+instance Execute Expression where
+    exec (Datatype _ x) p s a = exec x p s a
+    exec (Operator pos str) p state args = maybe (goLeft []) (\fun -> evalArgs state args >>= fun p state) (lookup str functionList)
+{-
+instance Execute Definition where
+    exec (Definition p name ((pattern, guard, body, inlineFuns):xs)) pos state args = \s1 -> setState s1 args pattern >>= \s2 -> maybeIf (checkGuard s2 guard)  `maybeElse`
+-}
+
+
+
+pureFunctions = [
+    ("+", add),
+    ("-", sub),
+    ("neg", neg),
+    ("*", mul),
+    ("/", division),
+    ("abs", StdLib.abs),
+    (":", listconstructor)
+    ]
 impureFunctions = [("print", printf), ("printStr", printStr)]
 functionList = (pureFunctions ++ impureFunctions)
 
