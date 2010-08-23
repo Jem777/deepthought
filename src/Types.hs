@@ -126,6 +126,23 @@ testEmptyState = State [] [] []
 getVariable (State _ _ a) b = lookup b a
 getFunction (State _ a _) b = lookup b a
 getTree (State a _ _) b = lookup b a
+setVariable (State a b _) c = State a b c
+setFunction (State a _ c) b = State a b c
+addVariables (State a b c) d = State a b (union c d)
+addFunctions (State a b c) d = State a (d ++ b) c
+addFunction (State a b c) d = State a (d:b) c
+setTree (State _ b c) a = State a b c
+
+-- functions for datatypes
+
+getType :: Datatype -> String
+getType (List _) = "List"
+getType (Vector _) = "Vector"
+getType (Number _) = "Integer"
+getType (Float _) = "Float"
+getType (String _) = "String"
+getType (Char _) = "Char"
+getType (Atom _) = "Atom"
 
 -- functions for the tree
 
