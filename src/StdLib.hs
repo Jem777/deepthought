@@ -90,6 +90,11 @@ printStr pos _ x
 
 do_io f x = EitherErr (f x >> (return . Right . Atom) "@ok")
 
+string _ state [x] = prettyShow state x >>= goRight . String
+string pos _ x
+        | (length x) > 1 = goLeft [tooMuchArguments pos "str" 1 (length x)]
+        | otherwise = goLeft [typeException pos "str" x]
+
 prettyShow state (List args) = evalArgs state args >>= mapM (prettyShow state) >>= parens "[" "]"
 prettyShow state (Vector args) = evalArgs state args >>= mapM (prettyShow state) >>= parens "(" ")"
 prettyShow _ (Number a) = (goRight . show) a
@@ -154,6 +159,7 @@ pureFunctions = [
     ("*", mul),
     ("/", division),
     ("abs", StdLib.abs),
+    ("str", string),
     (":", listconstructor)
     ]
 impureFunctions = [("print", printf), ("printStr", printStr)]
