@@ -49,7 +49,8 @@ data Expression = -- everything that evals to an datatype
             | Wildcard
             deriving (Show)
 
-data Definition = Definition SourcePos String [([Expression], Expression, Expression, [Definition])]
+data Definition = Definition SourcePos String [([Expression], Expression, Expression, [InlineFunction])]
+data InlineFunction = InlineFunction SourcePos String [([Expression], Expression, Expression)]
 
 data TreeObject = Expression (Integer, Integer) String Expression
 
