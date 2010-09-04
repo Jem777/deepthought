@@ -117,15 +117,14 @@ merge state a b = evalArgs state b >>= \b1 -> concat <$> mapM (simplify state) (
 checkGuard _ Wildcard = goRight True
 checkGuard state expression = eval state expression >>= goRight . (Atom "@true"==)
 
-setState state args pattern = (addVariables state) . concat <$> mapM (simplify state) (zip pattern args)
---setFunctionState state (Definition pos name patternList) = (\Definion a1 name a2 -> (name, Definion a1 name a2))addFunction state (name, Definition pos name patternList)
---setFunctionState state patternList = addFunctions state
+setState f state args pattern = (f state) . concat <$> mapM (simplify state) (zip pattern args)
+addToState = setState addVariables
 
-checkFunction state (args, pattern, guard, body) = setState state args pattern >>= \s -> checkGuard state guard
+checkFunction state (args, pattern, guard, body) = addToState state args pattern >>= \s -> checkGuard state guard
 evalPattern _ [] = goLeft []
 evalPattern state ((args, pattern, _, body):_) = evalLambda state args pattern body
 
-evalLambda state args pattern body = setState state args pattern >>= \s -> eval s body
+evalLambda state args pattern body = addToState state args pattern >>= \s -> eval s body
 
 evalFunction state args functions = filterM (checkFunction state) functions >>= evalPattern state
 
@@ -140,7 +139,7 @@ instance Evaluate Datatype where
     eval _ a = goRight a
 
 instance Execute Datatype where
-    exec (Lambda pattern body) pos state args = setState state args pattern >>= \s -> eval s body
+    exec (Lambda pattern body) pos state args = addToState state args pattern >>= \s -> eval s body
 
 instance Execute Expression where
     exec (Datatype _ x) p s a = exec x p s a
