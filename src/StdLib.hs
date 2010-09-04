@@ -111,22 +111,15 @@ simplify state (Datatype _ (List a), List b) = merge state a b
 simplify state (Datatype _ (Vector a), Vector b) = merge state a b
 simplify state (Datatype _ datatype, datatype2) = ifElse (datatype == datatype2) (goRight []) (goLeft [])
 simplify state (pattern, application) = goLeft []
-
 merge state a b = evalArgs state b >>= \b1 -> concat <$> mapM (simplify state) (zip a b1)
-
-checkGuard _ Wildcard = goRight True
-checkGuard state expression = eval state expression >>= goRight . (Atom "@true"==)
 
 setState f state args pattern = (f state) . concat <$> mapM (simplify state) (zip pattern args)
 addToState = setState addVariables
 
-checkFunction state (args, pattern, guard, body) = addToState state args pattern >>= \s -> checkGuard state guard
-evalPattern _ [] = goLeft []
-evalPattern state ((args, pattern, _, body):_) = evalLambda state args pattern body
+checkGuard _ Wildcard = goRight ()
+checkGuard state expression = eval state expression >>= \x -> ifElse (x == Atom "@true") (goRight ()) (goLeft [patternException expression])
 
-evalLambda state args pattern body = addToState state args pattern >>= \s -> eval s body
-
-evalFunction state args functions = filterM (checkFunction state) functions >>= evalPattern state
+evalGuard f state pattern guard body args = (setState f) state args pattern >>= \state1 -> checkGuard state1 guard >> return (state1, body)
 
 instance Evaluate Expression where
     eval state (Application pos fun args) = evalArgs state args >>= exec fun pos state
@@ -144,11 +137,12 @@ instance Execute Datatype where
 instance Execute Expression where
     exec (Datatype _ x) p s a = exec x p s a
     exec (Operator pos str) p state args = maybe (goLeft []) (\fun -> evalArgs state args >>= fun p state) (lookup str functionList)
-{-
-instance Execute Definition where
-    exec (Definition p name ((pattern, guard, body, inlineFuns):xs)) pos state args = \s1 -> setState s1 args pattern >>= \s2 -> maybeIf (checkGuard s2 guard)  `maybeElse`
--}
 
+instance Execute Definition where
+    exec (Definition p name list) pos state args = msum (map f list) >>= uncurry eval
+        where f (pattern, guard, body, inlineFunc) = evalGuard addVariables state pattern guard body args --ToDo: add support for inline functions
+    exec (InlineFunction p name list) pos state args = msum (map f list) >>= uncurry eval
+        where f (pattern, guard, body) = evalGuard addVariables state pattern guard body args
 
 
 pureFunctions = [
