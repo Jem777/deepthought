@@ -7,6 +7,7 @@ import Parser
 import Types
 import StdLib
 import Expr
+import Eval
 
 --main = runEitherErr (run "3+3") >>= either print print
 main = run "3+3"
