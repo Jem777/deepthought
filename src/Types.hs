@@ -13,44 +13,44 @@ import qualified Text.ParserCombinators.Parsec.Pos as P
 -- add type RuntimeException
 
 data Datatype = --primitve datatypes and lists and Vectors
-            List [Expression]
-            | Vector [Expression]
-            | Number Integer
-            | Float Double
-            | String String
-            | Char Char
-            | Atom String
-            | Lambda [Expression] Expression -- [Expr] are the arguments, Expr is the Body -- is a datatype
-            deriving (Eq)
+    List [Expression]
+    | Vector [Expression]
+    | Number Integer
+    | Float Double
+    | String String
+    | Char Char
+    | Atom String
+    | Lambda [Expression] Expression -- [Expr] are the arguments, Expr is the Body -- is a datatype
+    deriving (Eq)
 
 data Expression = -- everything that evals to an datatype
-            Variable {
-                position :: SourcePos,
-                varName :: String}
-            | Operator {
-                position :: SourcePos,
-                value :: String}
-            | Application {
-                position :: SourcePos,
-                appName :: Expression,
-                appArgs :: [Expression]}
-            -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
-            | Function {
-                position :: SourcePos,
-                funcName :: Expression,
-                funcArgs :: [Expression],
-                funcGuard :: Expression,
-                funcBody :: Expression,
-                funcWhere ::[Expression]}
-            --first is the ident, second the args, third the guard, fourth the body, fifth closures
-            | Datatype {
-                position :: SourcePos,
-                dataType :: Datatype}
-            | Wildcard
-            deriving (Show)
+    Variable {
+        position :: SourcePos,
+        varName :: String}
+    | Operator {
+        position :: SourcePos,
+        value :: String}
+    | Application {
+        position :: SourcePos,
+        appName :: Expression,
+        appArgs :: [Expression]}
+    -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
+    | Function {
+        position :: SourcePos,
+        funcName :: Expression,
+        funcArgs :: [Expression],
+        funcGuard :: Expression,
+        funcBody :: Expression,
+        funcWhere ::[Expression]}
+    --first is the ident, second the args, third the guard, fourth the body, fifth closures
+    | Datatype {
+        position :: SourcePos,
+        dataType :: Datatype}
+    | Wildcard
+    deriving (Show)
 
-data Definition = Definition SourcePos String [([Expression], Expression, Expression, [InlineFunction])]
-data InlineFunction = InlineFunction SourcePos String [([Expression], Expression, Expression)]
+data Definition = Definition SourcePos String [([Expression], Expression, Expression, [Definition])]
+    | InlineFunction SourcePos String [([Expression], Expression, Expression)]
 
 data TreeObject = Expression (Integer, Integer) String Expression
 
