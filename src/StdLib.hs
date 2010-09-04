@@ -14,8 +14,6 @@ import Errors
 import Misc
 
 
-class Argument a where
-    foo :: SourcePos -> State -> [a] -> EitherErr IO Datatype
 -- the functions
 
 --add :: SourcePos -> Datatype -> Datatype -> Either [CompileError] Datatype
@@ -57,6 +55,7 @@ abs pos _ x
 
 mul _ _ [List a, Number b] = goRight (List (concat (replicate (fromInteger b) a)))
 mul pos state [Vector a, Number b] = tupleMul pos state mul a (Number b)
+mul pos state [Number b, Vector a] = tupleMul pos state mul a (Number b)
 mul _ _ [Number a, Number b] = goRight (Number (a * b))
 mul _ _ [Float a, Number b] = goRight (Float (a * (fromInteger b)))
 mul _ _ [Number a, Float b] = goRight (Float ((fromInteger a) * b))
