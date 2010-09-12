@@ -2,11 +2,16 @@ module Compile where
 
 import Types
 import Parser
+import Errors
 
 import Data.List
 import Data.Either
 import Misc
 
+
+-- TODOs:
+-- move errors to Errors.hs
+-- simplify functions
 
 -- this module checks whether the semantics are correct
 --
@@ -62,9 +67,7 @@ getVars allowed exp
         g x xs = either Left (const (uFold (x:xs))) x
         leftSide = right (varArgs allowed exp) --TODO: test this (right is unsafe)
 
-unusedVars :: Either [CompileError] ([Expression], [Expression]) -> Either [CompileError] [Expression]
-unusedVars (Left x) = Left x
-unusedVars (Right (allowed, used)) = Right (filterUnused allowed used)
+unusedVars x = x >>= return . uncurry filterUnused
 
 varArgs allowed exp = (\a b -> eitherRight (flip union b) a) (sFold (map (getVarArgs allowed) (args exp))) allowed
 
@@ -114,10 +117,7 @@ usedFunc (Right allowed) exp
         where
         recursive = usedFunc (Right allowed)
 
-allowedFuncs a exp = allowed funcNames
-        where
-        funcNames = getFunctionNames a exp
-        allowed = eitherRight (union a)
+allowedFuncs a = eitherRight (union a) . getFunctionNames a
 
 ----------------
 -- check tree --
@@ -153,11 +153,7 @@ uFold l
         where 
         x = unzip (rights l)
 
-sFold :: (Eq a) => [Either [a1] [a]] -> Either [a1] [a]
-sFold [] = Right []
-sFold l 
-        | (not . null) (lefts l) = Left (foldl1 (++) (lefts l))
-        | otherwise = Right (foldl1 union (rights l))
+sFold = eitherFold (++) union
 
 right (Right x) = x
 left (Left x) = x
