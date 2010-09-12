@@ -25,9 +25,7 @@ add _ _ [Float a, Number b] = goRight (Float (a + (fromInteger b)))
 add _ _ [Number a, Float b] = goRight (Float ((fromInteger a) + b))
 add _ _ [Float a, Float b] = goRight (Float (a + b))
 add _ _ [String a, String b] = goRight (String (a ++ b))
-add pos _ x
-        | (length x) > 2 = goLeft [tooMuchArguments pos "+" 2 (length x)]
-        | otherwise = goLeft [typeException pos "+" x]
+add pos _ x = goLeft [functionException pos "+" 2 x]
 
 --sub :: SourcePos -> Datatype -> Datatype -> Either [CompileError] Datatype
 sub _ _ [List a, List b] = goRight (List (a \\ b)) -- has the be evaled first
@@ -37,56 +35,42 @@ sub _ _ [Float a, Number b] = goRight (Float (a - (fromInteger b)))
 sub _ _ [Number a, Float b] = goRight (Float ((fromInteger a) - b))
 sub _ _ [Float a, Float b] = goRight (Float (a - b))
 sub _ _ [String a, String b] = goRight (String (a \\ b))
-sub pos _ x
-        | (length x) > 2 = goLeft [tooMuchArguments pos "-" 2 (length x)]
-        | otherwise = goLeft [typeException pos "-" x]
+sub pos _ x = goLeft [functionException pos "-" 2 x]
 
 neg _ _ [Number a] = goRight (Number (negate a))
 neg _ _ [Float a] = (goRight . Float . negate) a
-neg pos _ x
-        | (length x) > 1 = goLeft [tooMuchArguments pos "negate" 1 (length x)]
-        | otherwise = goLeft [typeException pos "negate" x]
+neg pos _ x = goLeft [functionException pos "negate" 1 x]
 
 abs _ _ [Number a] | a > 0 = goRight (Number a) | otherwise = goRight (Number (negate a))
 abs _ _ [Float a] | a > 0 = goRight (Float a) | otherwise = goRight (Float (negate a))
-abs pos _ x
-        | (length x) > 1 = goLeft [tooMuchArguments pos "negate" 1 (length x)]
-        | otherwise = goLeft [typeException pos "negate" x]
+abs pos _ x = goLeft [functionException pos "abs" 1 x]
 
 mul _ _ [List a, Number b] = goRight (List (concat (replicate (fromInteger b) a)))
 mul pos state [Vector a, Number b] = tupleMul pos state mul a (Number b)
 mul pos state [Number b, Vector a] = tupleMul pos state mul a (Number b)
+--mul pos state [Vector a, Vector b] = G
 mul _ _ [Number a, Number b] = goRight (Number (a * b))
 mul _ _ [Float a, Number b] = goRight (Float (a * (fromInteger b)))
 mul _ _ [Number a, Float b] = goRight (Float ((fromInteger a) * b))
 mul _ _ [Float a, Float b] = goRight (Float (a * b))
 mul _ _ [String a, Number b] = goRight (String (concat (replicate (fromInteger b) a)))
-mul pos _ x
-        | (length x) > 2 = goLeft [tooMuchArguments pos "*" 2 (length x)]
-        | otherwise = goLeft [typeException pos "*" x]
+mul _ _ [Number b, String a] = goRight (String (concat (replicate (fromInteger b) a)))
+mul pos _ x = goLeft [functionException pos "*" 2 x]
 
 division _ _ [Number a, Number b] = goRight (Float ((fromInteger a) / (fromInteger b)))
 division _ _ [Float a, Number b] = goRight (Float (a / (fromInteger b)))
 division _ _ [Number a, Float b] = goRight (Float ((fromInteger a) / b))
 division _ _ [Float a, Float b] = goRight (Float (a / b))
-division pos _ x
-        | (length x) > 2 = goLeft [tooMuchArguments pos "/" 2 (length x)]
-        | otherwise = goLeft [typeException pos "/" x]
+division pos _ x = goLeft [functionException pos "/" 2 x]
 
 listconstructor pos _ [a, List b] = goRight (List ((Datatype pos a):b))
-listconstructor pos _ x
-        | (length x) > 2 = goLeft [tooMuchArguments pos ":" 2 (length x)]
-        | otherwise = goLeft [typeException pos ":" x]
+listconstructor pos _ x = goLeft [functionException pos ":" 2 x]
 
 printf _ state [x] = prettyShow state x >>= do_io putStrLn
-printf pos _ x
-        | (length x) > 1 = goLeft [tooMuchArguments pos "print" 1 (length x)]
-        | otherwise = goLeft [typeException pos "print" x]
+printf pos _ x = goLeft [functionException pos "print" 1 x]
 
 printStr _ _ [String a] = do_io putStrLn a
-printStr pos _ x
-        | (length x) > 1 = goLeft [tooMuchArguments pos "printStr" 1 (length x)]
-        | otherwise = goLeft [typeException pos "printStr" x]
+printStr pos _ x = goLeft [functionException pos "printStr" 1 x]
 
 do_io f x = EitherErr (f x >> (return . Right . Atom) "@ok")
 
