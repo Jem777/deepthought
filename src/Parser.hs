@@ -16,6 +16,7 @@ import Text.ParserCombinators.Parsec.Error
 import Lexer 
 import Types 
 import Expr
+import Errors
 
 parser = parseFromFile deepthought
 testparse = parse

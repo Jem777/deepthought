@@ -12,6 +12,10 @@ import qualified Text.ParserCombinators.Parsec.Pos as P
 -- support for qualified operators and functions
 -- add type RuntimeException
 
+class Object a where
+    position :: a -> SourcePos
+    name :: a -> String
+
 data Datatype = --primitve datatypes and lists and Vectors
     List [Expression]
     | Vector [Expression]
@@ -24,40 +28,24 @@ data Datatype = --primitve datatypes and lists and Vectors
     deriving (Eq)
 
 data Expression = -- everything that evals to an datatype
-    Variable {
-        position :: SourcePos,
-        varName :: String}
-    | Operator {
-        position :: SourcePos,
-        value :: String}
-    | Application {
-        position :: SourcePos,
-        appName :: Expression,
-        appArgs :: [Expression]}
+    Variable SourcePos String
+    | Operator SourcePos String
+    | Application SourcePos Expression [Expression]
     -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
-    | Function {
-        position :: SourcePos,
-        funcName :: Expression,
-        funcArgs :: [Expression],
-        funcGuard :: Expression,
-        funcBody :: Expression,
-        funcWhere ::[Expression]}
+    | Function SourcePos Expression [Expression] Expression Expression [Expression]
     --first is the ident, second the args, third the guard, fourth the body, fifth closures
-    | Datatype {
-        position :: SourcePos,
-        dataType :: Datatype}
+    | Datatype SourcePos Datatype
     | Wildcard
     deriving (Show)
 
 data Definition = Definition SourcePos String [([Expression], Expression, Expression, [Definition])]
     | InlineFunction SourcePos String [([Expression], Expression, Expression)]
+    deriving (Show)
 
 data TreeObject = Expression (Integer, Integer) String Expression
 
 data Tree = Tree String [String] [Expression] [([String], String)] [Expression] -- modname, compileflags, exports, imports, functions
-            deriving (Show, Eq)
-
-data CompileError = CompileError String SourcePos String --kind of Error, SourcePos, Message
+    deriving (Show, Eq)
 
 data State =
     State [(String, Tree)] [(String, Definition)] [(String, Datatype)]
@@ -65,33 +53,11 @@ data State =
 
 type SourcePos = P.SourcePos
 
-newtype (Monad m) => EitherErr m a = EitherErr { runEitherErr :: m (Either [CompileError] a)}
-newtype EitherList a = EitherList {runEitherList :: Either [CompileError] [a]}
-
 -- instances for the types
+
 instance Monad (Either a) where
     return = Right
     x >>= f = either Left f x
-
-
-instance Monad EitherList where
-    return = EitherList . Right . (:[])
-    --x >>= f = EitherList (either Left (runEitherList . map . f) (runEitherList x))
-    x >>= f = EitherList (either Left (runEitherList . f . head) (runEitherList x))
-
-instance Functor EitherList where
-    fmap f x = EitherList (either Left (Right . (map f)) (runEitherList x))
-
-instance (Monad m) => Monad (EitherErr m) where
-    return = EitherErr . return . Right
-    x >>= f = EitherErr (runEitherErr x >>= either (return . Left) (runEitherErr . f))
-
-instance (Monad m) => Functor (EitherErr m) where
-    fmap f x = EitherErr (runEitherErr x >>= either (return . Left) (return . Right . f))
-
-instance (Monad m) => MonadPlus (EitherErr m) where
-    mzero = (EitherErr . return . Left) []
-    mplus x y = EitherErr ((\a -> either (\b -> either (Left . (++b)) Right a) Right) `liftM` runEitherErr y `ap` runEitherErr x)
 
 instance Show Datatype where
     show (Number a) = show a
@@ -99,13 +65,6 @@ instance Show Datatype where
     show (String a) = show a
     show (Char a) = show a
     show (Atom a) = a
-
-
-instance Show CompileError where
-    show (CompileError a b c) = a ++ " at " ++ show b ++ ":\n" ++ c
-
-instance Eq CompileError where
-    (CompileError a _ c) == (CompileError a' _ c') = a == a'
 
 instance Eq Expression where
     (Variable _ a) == (Variable _ b) = a == b
@@ -116,6 +75,23 @@ instance Eq Expression where
     Wildcard == Wildcard = True
     _ == _ = False
 
+instance Object Expression where
+    position (Variable a _) = a
+    position (Operator a _) = a
+    position (Application a _ _) = a
+    position (Function a _ _ _ _ _) = a
+    position (Datatype a _) = a
+    name (Variable _ a) = a
+    name (Operator _ a) = a
+    name (Application _ a _) = name a
+    name (Function _ a _ _ _ _) = name a
+    name (Datatype _ _) = "datatype"
+
+instance Object Definition where
+    position (Definition a _ _) = a
+    position (InlineFunction a _ _) = a
+    name (Definition _ a _) = a
+    name (InlineFunction _ a _) = a
 
 -- a lot of trivial functions for using the types
 
@@ -155,6 +131,15 @@ treeFuncs (Tree _ _ _ _ a) = a
 
 lambdaArgs (Lambda a _) = a
 lambdaBody (Lambda _ a) = a
+
+appName (Application _ a _) = a
+appArgs (Application _ _ a) = a
+funcName (Function _ a _ _ _ _) = a
+funcArgs (Function _ _ a _ _ _) = a
+funcGuard (Function _ _ _ a _ _) = a
+funcBody (Function _ _ _ _ a _) = a
+funcWhere (Function _ _ _ _ _ a) = a
+dataType (Datatype _ a) = a
 
 isList (List _) = True
 isList _ = False
