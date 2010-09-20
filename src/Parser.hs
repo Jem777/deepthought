@@ -21,16 +21,6 @@ import Errors
 parser = parseFromFile deepthought
 testparse = parse
 
-formatError :: ParseError -> CompileError
-formatError a = CompileError 
-        "SyntaxError" 
-        (errorPos a) 
-        (showErrorMessages 
-                "or" "unknown parse error" 
-                "expecting" "unexpected" 
-                "end of input" (errorMessages a)
-                )
-
 deepthought :: GenParser Char st Tree
 deepthought = f <$> (whiteSpace *> parseModule) <*> many parseCompile <*> many parseExport <*> many parseImport <*> ((many function) <* eof)
         where f a b c = Tree a (concat b) (concat c)

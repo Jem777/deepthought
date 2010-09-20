@@ -46,3 +46,14 @@ typeException pos opName list = CompileError "TypeError" pos ("unsupported types
 tooMuchArguments pos opName expected got =
     CompileError "TypeError" pos (opName ++ " takes at most " ++ (show expected) ++ " arguments (" ++ (show got) ++ " given)")
 patternException expr = CompileError "PatternException" (position expr) "Couldn't match arguments against pattern"
+
+formatError :: ParseError -> CompileError
+formatError a = CompileError
+        "SyntaxError"
+        (errorPos a)
+        (showErrorMessages
+                "or" "unknown parse error"
+                "expecting" "unexpected"
+                "end of input" (errorMessages a)
+                )
+

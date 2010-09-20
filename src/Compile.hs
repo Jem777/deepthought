@@ -109,7 +109,7 @@ usedFunc (Left x) _ = Left x
 usedFunc (Right allowed) exp
         | (isApp exp) = uFold $ (recursive (appName exp)) : (map recursive (appArgs exp))
         | (isOp exp) && (elem exp allowed) = Right (allowed, [exp])
-        | (isOp exp) = Left [CompileError "NameError" (position exp) ("function '" ++ (value exp) ++ "' not defined")]
+        | (isOp exp) = Left [CompileError "NameError" (position exp) ("function '" ++ (name exp) ++ "' not defined")]
         | (isDatatype exp) && (isVector (dataType exp)) = uFold (map recursive (vectorValue (dataType exp)))
         | (isDatatype exp) && (isList (dataType exp)) = uFold (map recursive (listValue (dataType exp)))
         | (isDatatype exp) && (isLambda (dataType exp)) = recursive (lambdaBody (dataType exp))

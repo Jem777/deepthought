@@ -22,3 +22,5 @@ maybeIf False _ = Nothing
 
 maybeElse (Just a) _ = a
 maybeElse Nothing a = a
+
+bindM2 f a b = a >>= \x -> b >>= f x

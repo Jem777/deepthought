@@ -8,13 +8,13 @@ import Types
 import StdLib
 import Expr
 import Eval
+import Errors
 
 --main = runEitherErr (run "3+3") >>= either print print
-main = run "3+3"
+main = getLine >>= run
 
-run code = f ((testparse expression) "" code)
-    where
-    f (Right x) =
-        runEitherErr (eval testEmptyState x >>= prettyShow testEmptyState) >>=
-        either print putStrLn
-    f (Left x) = print [formatError x]
+run code = either
+    (\x -> print [formatError x])
+    (\x -> runEitherErr (eval testEmptyState x >>= prettyShow testEmptyState) >>=
+        either print putStrLn)
+    ((testparse expression) "" code)
