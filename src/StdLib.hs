@@ -48,7 +48,12 @@ abs pos _ x = goLeft [functionException pos "abs" 1 x]
 mul _ _ [List a, Number b] = goRight (List (concat (replicate (fromInteger b) a)))
 mul pos state [Vector a, Number b] = tupleMul pos state mul a (Number b)
 mul pos state [Number b, Vector a] = tupleMul pos state mul a (Number b)
---mul pos state [Vector a, Vector b] = G
+mul pos state [Vector [], Vector []] = (goRight . Vector) []
+mul pos state [Vector a, Vector b]
+    | length a /= length b = goLeft []
+    | otherwise = bindM2 (zipWithM (\x y -> mul pos state [x,y]))
+    (evalArgs state a) (evalArgs state b) >>=
+    \(x:xs) -> foldM (\x y -> add pos state [x,y]) x xs
 mul _ _ [Number a, Number b] = goRight (Number (a * b))
 mul _ _ [Float a, Number b] = goRight (Float (a * (fromInteger b)))
 mul _ _ [Number a, Float b] = goRight (Float ((fromInteger a) * b))
