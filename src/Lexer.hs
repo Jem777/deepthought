@@ -28,7 +28,7 @@ languageDef
                        ,"newtype"
                        ,"primitive", 
                        "module","import", "export", "compile",
-                       "where", "when"
+                       "where", "when", "private", "public"
                        ]          
     , P.caseSensitive  = True                                   
     }

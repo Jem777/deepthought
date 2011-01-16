@@ -92,6 +92,12 @@ unusedFuncs imports funcs = (filt . uFold) (map (getFunc allowed) funcs)
         filt = eitherRight (\(a,b) -> filterUnused a b)
         allowed = allowedFuncs imports funcs
 
+unusedFuncs2 :: [Expression] -> [Expression] -> Either [CompileError] [Expression]
+unusedFuncs2 imports funcs = (filt . uFold) (map (getFunc allowed) funcs)
+        where
+        filt = eitherRight (uncurry filterUnused)
+        allowed = allowedFuncs imports funcs
+
 getFunc :: Either [CompileError] [Expression] -> Expression -> Either [CompileError] ([Expression], [Expression])
 getFunc (Left x) _ = Left x
 getFunc (Right a) exp = uFold ((usedFunc allowed (body exp)) : (map (getFunc allowed) (funcWhere exp)))

@@ -77,23 +77,23 @@ expression =
 
 expr =
     try (parens expression)
+    <|> try fun
     <|> datatype primitive
     <|> datatype (list expression)
     <|> datatype (vector expression)
     <|> var
-    <|> fun
     <|> prefixOp
     <?> "expression"
 
 appHead :: GenParser Char st Expression
 appHead = 
-    (parens expression)
+    try (parens expression)
     <|> var
     <|> fun
     <|> prefixOp
 
 application :: GenParser Char st Expression
-application = Application <$> getPosition <*> appHead <*> (many1 (fun <|> expr))
+application = Application <$> getPosition <*> appHead <*> (many1 (fun <|> expr)) <?> "function"
 
 lambda :: CharParser st Datatype
 lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 var)) <*> ((reservedOp "->") *> expression)
@@ -112,9 +112,9 @@ list x = List <$> squares (commaSep x)
 vector x = Vector <$> parens (commaSep x)
 
 -- expressions
-bareFun = Operator <$> getPosition <*> funcId
+bareFun = Operator <$> getPosition <*> (funcId <|> parens operator)
 bareOp = Operator <$> getPosition <*> operator
-qualifiedFun = Operator <$> getPosition <*> ((endBy1 upperId2 (string moduleOp)) *> funcId)
+qualifiedFun = Operator <$> getPosition <*> ((endBy1 upperId2 (string moduleOp)) *> (funcId <|> parens operator))
 qualifiedOp = Operator <$> getPosition <*> ((endBy1 upperId2 (string moduleOp)) *> operator)
 fun = bareFun <|> qualifiedFun
 op = bareOp <|> qualifiedOp

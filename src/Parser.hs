@@ -10,6 +10,7 @@ module Parser
 -- maybe better import
 -- module::function parsing
 -- dynamic operatortable
+-- Definitions instead of Functions
 
 import ApplicativeParsec
 import Text.ParserCombinators.Parsec.Error
@@ -55,4 +56,6 @@ funTail :: GenParser Char st [Expression]
 funTail = semi >> return []
 
 closure = reserved "where" >> (parens (many1 helperFunc)) <|> ((:[]) <$> helperFunc)
-guard = option Wildcard (reserved "when" >> expression)
+guard = option (Datatype testEmptyPos (Atom "@true")) (reserved "when" >> expression)
+
+definition = (,) <$> (fun <|> (parens op)) <*> many (try pattern)

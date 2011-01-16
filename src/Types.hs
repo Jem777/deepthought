@@ -33,13 +33,17 @@ data Expression = -- everything that evals to an datatype
     | Application SourcePos Expression [Expression]
     -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
     | Function SourcePos Expression [Expression] Expression Expression [Expression]
+    -- !!!deprecated!!!
     --first is the ident, second the args, third the guard, fourth the body, fifth closures
     | Datatype SourcePos Datatype
     | Wildcard
     deriving (Show)
 
-data Definition = Definition SourcePos String [([Expression], Expression, Expression, [Definition])]
+data Definition =
+    Definition SourcePos String [([Expression], Expression, Expression, [Definition])]
+    -- Arguments: Position, FunctionName, [(Variables, Guard, Body, InlineFunctions)]
     | InlineFunction SourcePos String [([Expression], Expression, Expression)]
+    -- Arguments: Position, FunctionName, [(Variables, Guard, Body)]
     deriving (Show)
 
 data TreeObject = Expression (Integer, Integer) String Expression
@@ -96,7 +100,14 @@ instance Object Definition where
 -- a lot of trivial functions for using the types
 
 testEmptyPos = P.newPos "" 0 0
-testEmptyState = State [] [] []
+testEmptyState = State [] [("simple", testSimpleFun)] []
+testSimpleFun = Definition testEmptyPos "simple"
+    [(
+        [Variable testEmptyPos "X"],
+        Datatype testEmptyPos (Atom "@true"),
+        (Application testEmptyPos (Operator testEmptyPos "+") [Datatype testEmptyPos (Number 2),Variable testEmptyPos "X"]),
+        []
+    )]
 
 -- functions for the state
 

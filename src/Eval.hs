@@ -23,7 +23,6 @@ newtype EitherList a = EitherList {runEitherList :: Either [CompileError] [a]}
 
 instance Monad EitherList where
     return = EitherList . Right . (:[])
-    --x >>= f = EitherList (either Left (runEitherList . map . f) (runEitherList x))
     x >>= f = EitherList (either Left (runEitherList . f . head) (runEitherList x))
 
 instance Functor EitherList where

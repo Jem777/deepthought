@@ -3,7 +3,7 @@ module StdLib where
 -- System Imports
 import Data.List
 import Data.Either (lefts, rights, either)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 import Control.Monad
 import Control.Applicative ((<$>), (<*>))
 
@@ -13,6 +13,8 @@ import Eval
 import Errors
 import Misc
 
+--TODOs:
+--implement better error handling
 
 -- the functions
 
@@ -80,9 +82,7 @@ printStr pos _ x = goLeft [functionException pos "printStr" 1 x]
 do_io f x = EitherErr (f x >> (return . Right . Atom) "@ok")
 
 string _ state [x] = prettyShow state x >>= goRight . String
-string pos _ x
-        | (length x) > 1 = goLeft [tooMuchArguments pos "str" 1 (length x)]
-        | otherwise = goLeft [typeException pos "str" x]
+string pos _ x = goLeft [functionException pos "str" 1 x]
 
 prettyShow state (List args) = evalArgs state args >>= mapM (prettyShow state) >>= parens "[" "]"
 prettyShow state (Vector args) = evalArgs state args >>= mapM (prettyShow state) >>= parens "(" ")"
@@ -122,19 +122,23 @@ instance Evaluate Datatype where
 
 instance Execute Datatype where
     exec (Lambda pattern body) pos state args = addToState state args pattern >>= \s -> eval s body
+    exec _ pos state args = goLeft [] --TODO error handling
 
 instance Execute Expression where
     exec (Datatype _ x) p s a = exec x p s a
-    exec (Operator pos str) p state args = maybe (goLeft []) (\fun -> evalArgs state args >>= fun p state) (lookup str functionList)
+    exec (Operator pos str) p state args = fromMaybe (goLeft []) (mplus buildin definition) --TODO: error handling
+        where
+            buildin = (\fun -> fun p state args) <$> lookup str functionList
+            definition = (\def -> exec def p state args) <$> getFunction state str
 
 instance Execute Definition where
-    exec (Definition p name list) pos state args = msum (map f list) >>= uncurry eval
-        where f (pattern, guard, body, inlineFunc) = evalGuard addVariables state pattern guard body args --ToDo: add support for inline functions
+    exec (Definition p name list) pos state args = msum (map f list) >>= \(iF,(s,e)) -> {-setFunction s iF >>= \s1 ->-} eval s e
+        where f (pattern, guard, body, inlineFunc) = evalGuard setVariable state pattern guard body args >>= return . ((,) inlineFunc) --ToDo: add support for inline functions
     exec (InlineFunction p name list) pos state args = msum (map f list) >>= uncurry eval
         where f (pattern, guard, body) = evalGuard addVariables state pattern guard body args
 
 
-pureFunctions = [
+functionList = [
     ("+", add),
     ("-", sub),
     ("neg", neg),
@@ -142,10 +146,10 @@ pureFunctions = [
     ("/", division),
     ("abs", StdLib.abs),
     ("str", string),
-    (":", listconstructor)
+    (":", listconstructor),
+    ("print", printf),
+    ("printStr", printStr)
     ]
-impureFunctions = [("print", printf), ("printStr", printStr)]
-functionList = (pureFunctions ++ impureFunctions)
 
 evalArgs state args = mapM (eval state) args
 
@@ -166,5 +170,4 @@ tupleMul pos state f argList c =
     mapM (\x -> Datatype pos <$> (f pos state [x,c])) >>=
     goRight . Vector
 
---reportTypeError :: String -> [Datatype] -> CompileError
 
