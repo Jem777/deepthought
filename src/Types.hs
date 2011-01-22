@@ -29,7 +29,7 @@ data Datatype = --primitve datatypes and lists and Vectors
 
 data Expression = -- everything that evals to an datatype
     Variable SourcePos String
-    | Operator SourcePos String
+    | Operator SourcePos String String
     | Application SourcePos Expression [Expression]
     -- | ListComp Expression [Datatype] [Expression] -- first one is a pattern
     | Function SourcePos Expression [Expression] Expression Expression [Expression]
@@ -72,7 +72,7 @@ instance Show Datatype where
 
 instance Eq Expression where
     (Variable _ a) == (Variable _ b) = a == b
-    (Operator _ a) == (Operator _ b) = a == b
+    (Operator _ a b) == (Operator _ a' b') = a == a' && b == b'
     (Application _ a b) == (Application _ a' b') = a == a' && b == b'
     (Function _ a b c d e) == (Function _ a' b' c' d' e') = a == a' && b == b' && c == c' && d == d' && e == e'
     (Datatype _ a) == (Datatype _ b) = a == b
@@ -81,12 +81,13 @@ instance Eq Expression where
 
 instance Object Expression where
     position (Variable a _) = a
-    position (Operator a _) = a
+    position (Operator a _ _) = a
     position (Application a _ _) = a
     position (Function a _ _ _ _ _) = a
     position (Datatype a _) = a
     name (Variable _ a) = a
-    name (Operator _ a) = a
+    name (Operator _ "" a) = a
+    name (Operator _ a b) = a ++ "::" ++ b
     name (Application _ a _) = name a
     name (Function _ a _ _ _ _) = name a
     name (Datatype _ _) = "datatype"
@@ -105,7 +106,7 @@ testSimpleFun = Definition testEmptyPos "simple"
     [(
         [Variable testEmptyPos "X"],
         Datatype testEmptyPos (Atom "@true"),
-        (Application testEmptyPos (Operator testEmptyPos "+") [Datatype testEmptyPos (Number 2),Variable testEmptyPos "X"]),
+        (Application testEmptyPos (Operator testEmptyPos "" "+") [Datatype testEmptyPos (Number 2),Variable testEmptyPos "X"]),
         []
     )]
 
@@ -158,7 +159,7 @@ isVector (Vector _) = True
 isVector _ = False
 isVar (Variable _ _) = True
 isVar _ = False
-isOp (Operator _ _) = True
+isOp (Operator _ _ _) = True
 isOp _ = False
 isApp (Application _ _ _) = True
 isApp _ = False

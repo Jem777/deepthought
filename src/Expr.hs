@@ -30,7 +30,7 @@ table   = [
 binary  name = Infix (posOp name >>= (\p -> return (\x y -> op_to_expr p name [x,y])))
 prefix  name = Prefix (posOp name >>= (\p -> return (\y -> prefixop_to_expr p name [y])))
 postfix name = Postfix (posOp name >>= (\p -> return (\y -> op_to_expr p name [y])))
-binFunc name = Infix (f >>= (\p -> return (\x y -> (Application p (Operator p name) [x,y]))))
+binFunc name = Infix (f >>= (\p -> return (\x y -> (Application p (Operator p "" name) [x,y]))))
         where f = getPosition <* (reservedOp name)
 
 posOp name = getPosition <* (reservedOp name)
@@ -55,7 +55,7 @@ pattern =
     <?> "pattern"
 
 listconstructor = f <$> getPosition <*> colonSep pattern
-        where f x = Application x (Operator x ":")
+        where f x = Application x (Operator x "" ":")
 
 {-listcomprehension = 
     squares (
@@ -112,13 +112,15 @@ list x = List <$> squares (commaSep x)
 vector x = Vector <$> parens (commaSep x)
 
 -- expressions
-bareFun = Operator <$> getPosition <*> (funcId <|> parens operator)
-bareOp = Operator <$> getPosition <*> operator
-qualifiedFun = Operator <$> getPosition <*> ((endBy1 upperId2 (string moduleOp)) *> (funcId <|> parens operator))
-qualifiedOp = Operator <$> getPosition <*> ((endBy1 upperId2 (string moduleOp)) *> operator)
+bareFun = Operator <$> getPosition <*> return "" <*> (funcId <|> parens operator)
+bareOp = Operator <$> getPosition <*> return "" <*> operator
+qualifiedFun = Operator <$> getPosition <*> (upperId2 <* (string moduleOp)) <*> (funcId <|> parens operator)
+qualifiedOp = Operator <$> getPosition <*> (upperId2 <* (string moduleOp)) <*> operator
 fun = bareFun <|> qualifiedFun
 op = bareOp <|> qualifiedOp
-prefixOp = Operator <$> getPosition <*> prefixOperator
+prefixOp = barePrefixOp <|> qualifiedPrefixOp
+barePrefixOp = Operator <$> getPosition <*> return "" <*> prefixOperator
+qualifiedPrefixOp = Operator <$> getPosition <*> (upperId2 <* (string moduleOp)) <*> prefixOperator
 var = Variable <$> getPosition <*> varId
 datatype x = Datatype <$> getPosition <*> x
 
@@ -127,12 +129,12 @@ datatype x = Datatype <$> getPosition <*> x
 -- internal functions
 
 op_to_expr :: SourcePos -> String -> [Expression] -> Expression
-op_to_expr pos name = Application pos (Operator pos name)
+op_to_expr pos name = Application pos (Operator pos "" name)
 
 prefixop_to_expr :: SourcePos -> String -> [Expression] -> Expression
 prefixop_to_expr pos name = Application pos (convert name)
     where
-    convert "+" = Operator pos "id"
-    convert "-" = Operator pos "neg"
-    convert x = Operator pos x
+    convert "+" = Operator pos "" "id"
+    convert "-" = Operator pos "" "neg"
+    convert x = Operator pos "" x
 

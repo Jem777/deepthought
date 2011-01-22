@@ -3,7 +3,7 @@ module CompileAST where
 import AST
 import ASTErrors
 import qualified Types
-import StdLib2
+import StdLib
 import State
 import CompilerErrors
 
@@ -23,7 +23,7 @@ instance AST Types.Datatype where
 
 instance AST Types.Expression where
     --toAst (Variable pos name) =
-    toAst (Types.Operator pos m) = resolveFunction (m,m) >>= return . uncurry (Operator pos) --TODO: change to (m,f)
+    toAst (Types.Operator pos m f) = resolveFunction (m,f) >>= return . uncurry (Operator pos) --TODO: change to (m,f)
     toAst (Types.Application pos op args) = toAst op >>= \operator -> (mapM toAst args) >>= return . (Application operator pos)
     toAst (Types.Datatype pos datatype) = toAst datatype
     toAst Types.Wildcard = (return . Atom) "__wildcard__"

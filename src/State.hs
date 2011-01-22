@@ -3,7 +3,7 @@ module State
     where
 
 import AST
-import StdLib2 (builtins)
+import StdLib (builtins)
 import CompilerErrors
 
 import Control.Monad.State
