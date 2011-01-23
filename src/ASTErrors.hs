@@ -1,12 +1,14 @@
 module ASTErrors where
 
 import Text.ParserCombinators.Parsec.Pos (SourcePos)
+import CompilerErrors
 
 data RuntimeError =
     TooMuchArgs SourcePos String Integer Integer
     | TypeError SourcePos String String
     | PatternException SourcePos
     | BlubbError
+    | CompilerError CompileError
     deriving (Show)
     -- | TypeException SourcePos String [ASTDatatype]
 

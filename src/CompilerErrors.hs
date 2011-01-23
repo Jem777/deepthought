@@ -1,4 +1,8 @@
 module CompilerErrors where
 
-data CompilerError = FoobarError
+import Text.ParserCombinators.Parsec.Error
+
+data CompileError =
+    FoobarError
+    | ParseError ParseError
     deriving (Show)

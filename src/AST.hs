@@ -6,18 +6,24 @@ import Data.List (intercalate)
 import Data.Map (Map)
 import Control.Monad.State
 
+import CompilerErrors
 import ASTErrors
 import Misc
 
 type Eval = StateT EvalState EvalMonad
-
 data EvalState = EvalState Tree Variables
 newtype EvalMonad a = EvalMonad { runEvalMonad :: IO (Either [RuntimeError] a)}
+
+type Compiler = StateT CompilerState CompilerMonad
+data CompilerState = CompilerState Tree String Imports [String] Variables
+newtype CompilerMonad a = CompilerMonad {runCompilerMonad :: Either [CompileError] a}
 
 type Imports = Map String (String, [String]) --alias, module name and the functions
 type Module = Map String ASTDatatype
 type Tree = Map String Module
 type Variables = Map String ASTDatatype
+
+transferMonad = EvalMonad . return . (either (Left . map CompilerError) Right) . runCompilerMonad
 
 reduceEvalMonad :: Eval (EvalMonad a) -> Eval a
 reduceEvalMonad = StateT . (\f s -> f s >>= \(a, s) -> a >>= \x -> return (x,s)) . runStateT

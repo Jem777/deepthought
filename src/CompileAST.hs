@@ -1,11 +1,8 @@
 module CompileAST where
 
 import AST
-import ASTErrors
 import qualified Types
-import StdLib
 import State
-import CompilerErrors
 import Eval
 
 import Data.Either

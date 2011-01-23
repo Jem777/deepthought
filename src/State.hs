@@ -1,5 +1,5 @@
 module State
-    --(Compiler, addModule, addFunction, getFunction, importModule, setExports)
+    (addModule, addFunction, resolveFunction, callFunction, toLambda, resolveVariable, addVariable, transferState, newState, cleanState, importModule, setExports)
     where
 
 import AST
@@ -15,11 +15,6 @@ import qualified Data.Map as Map
 import Data.Maybe (listToMaybe)
 import Control.Applicative
 
-
-type Compiler = StateT CompilerState CompilerMonad
-
-data CompilerState = CompilerState Tree String Imports [String] Variables
-newtype CompilerMonad a = CompilerMonad {runCompilerMonad :: Either [CompilerError] a}
 
 evalS :: Compiler a -> CompilerState -> CompilerMonad a
 evalS a b = evalStateT a b
@@ -43,6 +38,7 @@ call f g a = reduceMonad . gets $ maybeError g . (f a)
 importModule imports = modify (changeImports (const imports))
 setExports exports = modify (changeExports (const exports))
 
+transferState state = EvalState (getTree state) Map.empty
 newState = CompilerState (Map.singleton "StdLib" (Map.fromList (map f builtins))) "" (Map.singleton "" ("StdLib", map fst builtins)) [] Map.empty
     where f (a,b) = (a, Lambda (\pos args -> mapM eval args >>= b pos))
 cleanState (CompilerState t _ _ _ _) = CompilerState t "" (Map.singleton "" ("StdLib", map fst builtins)) [] Map.empty
