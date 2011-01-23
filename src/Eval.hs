@@ -57,7 +57,7 @@ merge (Application (Operator _ "StdLib" ":") _ args, List a)
     | otherwise = Left [BlubbError]
 merge (a, b) = if a == b then return [] else Left [BlubbError]
 
-getArgs pattern args = matchingArgs args pattern >>= mapM merge >>= return . concat
+getArgs args pattern = matchingArgs args pattern >>= mapM merge >>= return . concat
 saveArgs a = (>>= mapM (uncurry addVariable)) . reduceEvalMonad . return . EvalMonad . return . getArgs a
 {-
 merge :: (Types.Expression, ASTDatatype) -> Either [CompilerError] [(String, ASTDatatype)]
