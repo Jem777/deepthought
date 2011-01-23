@@ -1,36 +1,42 @@
 module AST where
 
-import qualified Text.ParserCombinators.Parsec.Pos as P (SourcePos)
 import Control.Monad
 import Control.Applicative
 import Data.List (intercalate)
+import Data.Map (Map)
+import Control.Monad.State
 
-data RuntimeError =
-    TooMuchArgs SourcePos String Integer Integer
-    | TypeError String SourcePos String
-    | PatternException SourcePos
-    | TypeException SourcePos String [ASTDatatype]
+import ASTErrors
+import Misc
 
-instance Eq RuntimeError where
-    (TooMuchArgs _ _ _ _) == (TooMuchArgs _ _ _ _) = True
-    (TypeError _ _ _) == (TypeError _ _ _) = True
-    (PatternException _) == (PatternException _) = True
-    _ == _ = False
+type Eval = StateT EvalState EvalMonad
 
-newtype EitherErr a = EitherErr { runEitherErr :: IO (Either [RuntimeError] a)}
+data EvalState = EvalState Tree Variables
+newtype EvalMonad a = EvalMonad { runEvalMonad :: IO (Either [RuntimeError] a)}
 
-instance Monad EitherErr where
-    return = EitherErr . return . Right
-    x >>= f = EitherErr (runEitherErr x >>= either (return . Left) (runEitherErr . f))
+type Imports = Map String (String, [String]) --alias, module name and the functions
+type Module = Map String ASTDatatype
+type Tree = Map String Module
+type Variables = Map String ASTDatatype
 
-instance MonadPlus EitherErr where
-    mzero = (EitherErr . return . Left) []
-    mplus x y = EitherErr ((\a -> either (\b -> either (Left . (++b)) Right a) Right) `liftM` runEitherErr y `ap` runEitherErr x)
+reduceEvalMonad :: Eval (EvalMonad a) -> Eval a
+reduceEvalMonad = StateT . (\f s -> f s >>= \(a, s) -> a >>= \x -> return (x,s)) . runStateT
+doIO f x = toEval (f x >> (return . Right . Atom) "@ok")
+goRight :: a -> Eval a
+goRight = return
+goLeft = toEval . return . Left
+toEval = reduceEvalMonad . return . EvalMonad
 
-instance Functor EitherErr where
-    fmap f x = EitherErr (runEitherErr x >>= either (return . Left) (return . Right . f))
+instance Monad EvalMonad where
+    return = EvalMonad . return . Right
+    x >>= f = EvalMonad (runEvalMonad x >>= either (return . Left) (runEvalMonad . f))
 
-type SourcePos = P.SourcePos
+instance MonadPlus EvalMonad where
+    mzero = (EvalMonad . return . Left) []
+    mplus x y = EvalMonad ((\a -> either (\b -> either (Left . (++b)) Right a) Right) `liftM` runEvalMonad y `ap` runEvalMonad x)
+
+instance Functor EvalMonad where
+    fmap f x = EvalMonad (runEvalMonad x >>= either (return . Left) (return . Right . f))
 
 data ASTDatatype =
     List [ASTDatatype]
@@ -41,15 +47,10 @@ data ASTDatatype =
     | Char Char
     | Atom String
     | Operator SourcePos String String
-    | Variable SourcePos String String
+    | Variable SourcePos String
     | Application ASTDatatype SourcePos [ASTDatatype]
-    | Lambda (SourcePos -> [ASTDatatype] -> EitherErr ASTDatatype)
+    | Lambda (SourcePos -> [ASTDatatype] -> Eval ASTDatatype)
 
-{-
-eval (Application (Lambda l) pos args) = l pos args
-eval (Application _ pos _) = goLeft []
-eval x = goRight x
--}
 
 instance Eq ASTDatatype where
     (List a) == (List b) = a == b
@@ -60,7 +61,7 @@ instance Eq ASTDatatype where
     (Char a) == (Char b) = a == b
     (Atom a) == (Atom b) = a == b
     (Application a _ c) == (Application a' _ c') = a == a' && c == c'
-    (Lambda _) == (Lambda _) = True
+    (Lambda _) == (Lambda _) = False
     _ == _ = False
 instance Show ASTDatatype where
     show (List a) = show a
@@ -71,4 +72,3 @@ instance Show ASTDatatype where
     show (Char a) = show a
     show (Atom a) = a
     show (Lambda _) = "<Lambda>"
-

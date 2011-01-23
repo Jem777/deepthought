@@ -2,13 +2,15 @@ module StdLib where
 
 import AST
 import ASTErrors
+import Misc
 
 import Data.List (transpose, (\\))
 import Control.Monad (zipWithM, foldM)
 
+add :: SourcePos -> [ASTDatatype] -> Eval ASTDatatype
 add _ [List a, List b] = goRight (List (a ++ b))
 add pos [Vector a, Vector b]
-    | (length a == length b) = mapM (add pos) (transpose [a,b]) >>= goRight . Vector
+    | (length a == length b) = mapM (add pos) (transpose [a,b]) >>= return . Vector
     | otherwise = goLeft []
 add _ [Number a, Number b] = goRight (Number (a + b))
 add _ [Float a, Number b] = goRight (Float (a + (fromInteger b)))
@@ -69,7 +71,7 @@ printStr pos x = goLeft [functionError pos "printStr" 1 x]
 string _ [x] = (goRight . String . show) x
 string pos x = goLeft [functionError pos "str" 1 x]
 
-builtins = map (\(n,f) -> (n, Lambda f))
+builtins =
     [
     ("+", add),
     ("-", sub),
@@ -82,7 +84,3 @@ builtins = map (\(n,f) -> (n, Lambda f))
     ("print", printf),
     ("printStr", printStr)
     ]
-
-doIO f x = EitherErr (f x >> (return . Right . Atom) "@ok")
-goRight = EitherErr . return . Right
-goLeft = EitherErr . return . Left

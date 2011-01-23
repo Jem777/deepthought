@@ -1,7 +1,12 @@
 module Misc where
 
-import Data.Either (either, lefts, rights)
+--import Data.Either (either, lefts, rights)
+import qualified Text.ParserCombinators.Parsec.Pos as P (SourcePos)
 
+
+type SourcePos = P.SourcePos
+
+{-
 eitherRight f = either Left (Right . f) 
 
 mapEither f (Right x) (Right y) = Right (f x y)
@@ -24,3 +29,4 @@ maybeElse (Just a) _ = a
 maybeElse Nothing a = a
 
 bindM2 f a b = a >>= \x -> b >>= f x
+-}
