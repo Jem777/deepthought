@@ -93,7 +93,7 @@ appHead =
     <|> prefixOp
 
 application :: GenParser Char st Expression
-application = Application <$> getPosition <*> appHead <*> (many1 (fun <|> expr)) <?> "function"
+application = Application <$> getPosition <*> appHead <*> (many1 expr) <?> "function"
 
 lambda :: CharParser st Datatype
 lambda = Lambda <$> ((reservedOp "\\") *> (commaSep1 var)) <*> ((reservedOp "->") *> expression)
