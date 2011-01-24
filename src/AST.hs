@@ -15,7 +15,7 @@ data EvalState = EvalState Tree Variables
 newtype EvalMonad a = EvalMonad { runEvalMonad :: IO (Either [RuntimeError] a)}
 
 type Compiler = StateT CompilerState CompilerMonad
-data CompilerState = CompilerState Tree String Imports [String] Variables
+data CompilerState = CompilerState Tree String Imports [String] [String]
 newtype CompilerMonad a = CompilerMonad {runCompilerMonad :: Either [CompileError] a}
 
 type Imports = Map String (String, [String]) --alias, module name and the functions
@@ -78,3 +78,5 @@ instance Show ASTDatatype where
     show (Char a) = show a
     show (Atom a) = a
     show (Lambda _) = "<Lambda>"
+    show (Variable pos string) = "Variable " ++ string
+    show (Application op _ args) = "Application " ++ show op ++ " to " ++ (concat . map show) args

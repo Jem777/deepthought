@@ -1,5 +1,5 @@
 module State
-    (addModule, addFunction, resolveFunction, callFunction, toLambda, resolveVariable, addVariable, transferState, newState, cleanState, importModule, setExports)
+    (addModule, addFunction, resolveFunction, callFunction, toLambda, addVariable, elemVariable, transferState, newState, cleanState, importModule, setExports)
     where
 
 import AST
@@ -9,7 +9,7 @@ import Misc
 import Eval
 
 import Control.Monad.State
-import Data.List (reverse)
+import Data.List (reverse, find)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (listToMaybe)
@@ -27,8 +27,9 @@ addFunction (m, f) lambda = modify (changeTree (Map.adjust (\funMap -> Map.inser
 resolveFunction = call internResolve FoobarError
 callFunction = call internLambda FoobarError
 toLambda = call internCallDirect FoobarError
-resolveVariable = call (\v -> Map.lookup v . getVariables) FoobarError
-addVariable key value = modify (changeVariables (Map.insert key value))
+--resolveVariable = call (\v -> Map.lookup v . getVariables) FoobarError
+elemVariable = call (\v -> find (==v) . getVariables) FoobarError
+addVariable variable = modify (changeVariables ((:) variable))
 
 maybeError f = CompilerMonad . maybe (Left [f]) Right
 reduceMonad :: Compiler (CompilerMonad a) -> Compiler a
@@ -38,10 +39,13 @@ call f g a = reduceMonad . gets $ maybeError g . (f a)
 importModule imports = modify (changeImports (const imports))
 setExports exports = modify (changeExports (const exports))
 
+
+-- TODO: using EvalState is bad style, new function for adding new eval-datatype
+-- parameterize newState and cleanState so State.hs is independent of StdLib and Eval
 transferState state = EvalState (getTree state) Map.empty
-newState = CompilerState (Map.singleton "StdLib" (Map.fromList (map f builtins))) "" (Map.singleton "" ("StdLib", map fst builtins)) [] Map.empty
+newState = CompilerState (Map.singleton "StdLib" (Map.fromList (map f builtins))) "" (Map.singleton "" ("StdLib", map fst builtins)) [] []
     where f (a,b) = (a, Lambda (\pos args -> mapM eval args >>= b pos))
-cleanState (CompilerState t _ _ _ _) = CompilerState t "" (Map.singleton "" ("StdLib", map fst builtins)) [] Map.empty
+cleanState (CompilerState t _ _ _ _) = CompilerState t "" (Map.singleton "" ("StdLib", map fst builtins)) [] []
 
 changeTree f (CompilerState t m i e v) = CompilerState (f t) m i e v
 getTree (CompilerState t _ _ _ _) = t
