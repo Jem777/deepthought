@@ -32,3 +32,5 @@ testrun code = runEvalMonad (runAST newState ((testparse expression) "" code)) >
 
 buildAST state = either (CompilerMonad . Left . (:[]) . ParseError) ((flip evalStateT state) . toAst)
 runAST state = (>>= flip evalStateT (transferState state) . eval) . transferMonad . buildAST state
+
+debugAST a = either print print . runCompilerMonad . buildAST a
