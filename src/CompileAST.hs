@@ -19,9 +19,8 @@ instance AST Types.Datatype where
     toAst (Types.Atom a) = return (Atom a)
     toAst (Types.List a) = mapM toAst a >>= return . List
     toAst (Types.Vector a) = mapM toAst a >>= return . Vector
-    toAst (Types.Lambda args body) = (\a -> Lambda . (f a)) <$> mapM toAst args <*> toAst body
+    toAst (Types.Lambda args body) = (\a -> Lambda . (f a)) <$> (mapM toAst args >>= mapM addVarState) <*> (toAst body >>= checkVarState)
         where f args body pos pattern = saveArgs args pattern >> (eval body)
-    --f :: [ASTDatatype] -> ASTDatatype -> SourcePos -> [ASTDatatype] -> Eval ASTDatatype
 
 instance AST Types.Expression where
     toAst (Types.Variable pos name) = return (Variable pos name) --resolveVariable name
@@ -38,3 +37,17 @@ instance AST Types.Expression where
 
 --[([Expression], Expression, Expression, [Definition])]
 --addPattern (varList, guard, body, inlineFun)
+
+addVarState :: ASTDatatype -> Compiler ASTDatatype
+addVarState (Variable pos name) = addVariable name >> return (Variable pos name)
+addVarState (Application op pos args) = mapM addVarState args >> return (Application op pos args)
+addVarState (List a) = mapM addVarState a >> return (List a)
+addVarState (Vector a) = mapM addVarState a >> return (Vector a)
+addVarState x = return x
+
+checkVarState :: ASTDatatype -> Compiler ASTDatatype
+checkVarState (Variable pos name) = elemVariable name >> return (Variable pos name)
+checkVarState (Application op pos args) = mapM checkVarState args >> return (Application op pos args)
+checkVarState (List a) = mapM checkVarState a >> return (List a)
+checkVarState (Vector a) = mapM checkVarState a >> return (Vector a)
+checkVarState x = return x
