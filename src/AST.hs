@@ -33,6 +33,17 @@ goRight = return
 goLeft = toEval . return . Left
 toEval = reduceEvalMonad . return . EvalMonad
 
+getType (List _) = "List"
+getType (Vector _) = "Vector"
+getType (Number _) = "Number"
+getType (Float _) = "Float"
+getType (String _) = "String"
+getType (Char _) = "Char"
+getType (Atom _) = "Atom"
+getType (Lambda _) = "Lambda"
+getType (Operator _ _ _) = "Function"
+
+
 instance Monad EvalMonad where
     return = EvalMonad . return . Right
     x >>= f = EvalMonad (runEvalMonad x >>= either (return . Left) (runEvalMonad . f))
@@ -78,5 +89,5 @@ instance Show ASTDatatype where
     show (Char a) = show a
     show (Atom a) = a
     show (Lambda _) = "<Lambda>"
-    show (Variable pos string) = "Variable " ++ string
+    show (Variable pos string) = string
     show (Application op _ args) = "Application " ++ show op ++ " to " ++ (concat . map show) args

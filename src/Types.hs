@@ -53,6 +53,7 @@ data Tree = Tree String [String] [Expression] [([String], String)] [Expression] 
 
 data State =
     State [(String, Tree)] [(String, Definition)] [(String, Datatype)]
+    -- totally deprecated!
     -- arguments are imported modules, functions and variables
 
 type SourcePos = P.SourcePos

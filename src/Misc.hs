@@ -1,10 +1,13 @@
 module Misc where
 
 --import Data.Either (either, lefts, rights)
-import qualified Text.ParserCombinators.Parsec.Pos as P (SourcePos)
+import qualified Text.ParserCombinators.Parsec.Pos as P (SourcePos, newPos)
 
 
 type SourcePos = P.SourcePos
+
+moduleSep = "::"
+testEmptyPos = P.newPos "" 0 0
 
 {-
 eitherRight f = either Left (Right . f) 

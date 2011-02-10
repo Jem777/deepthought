@@ -6,7 +6,7 @@ import CompilerErrors
 data RuntimeError =
     TooMuchArgs SourcePos String Integer Integer
     | TypeError SourcePos String String
-    | PatternException SourcePos
+    | PatternException SourcePos String String
     | BlubbError
     | CompilerError CompileError
     deriving (Show)
@@ -15,7 +15,7 @@ data RuntimeError =
 instance Eq RuntimeError where
     (TooMuchArgs _ _ _ _) == (TooMuchArgs _ _ _ _) = True
     (TypeError _ _ _) == (TypeError _ _ _) = True
-    (PatternException _) == (PatternException _) = True
+    (PatternException _ _ _) == (PatternException _ _ _) = True
     _ == _ = False
 
 functionError pos opName expected args

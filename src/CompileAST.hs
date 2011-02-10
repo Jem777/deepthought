@@ -1,9 +1,11 @@
-module CompileAST where
+module CompileAST (AST, toAst, checkVarState) where
 
 import AST
 import qualified Types
 import State
 import Eval
+import CompilerErrors
+import Misc
 
 import Data.Either
 import Control.Applicative
@@ -20,18 +22,20 @@ instance AST Types.Datatype where
     toAst (Types.List a) = mapM toAst a >>= return . List
     toAst (Types.Vector a) = mapM toAst a >>= return . Vector
     toAst (Types.Lambda args body) = (\a -> Lambda . (f a)) <$> (mapM toAst args >>= mapM addVarState) <*> (toAst body >>= checkVarState)
-        where f args body pos pattern = saveArgs args pattern >> (eval body)
+        where f args body pos pattern = saveArgs pos args pattern >> (eval body)
 
 instance AST Types.Expression where
     toAst (Types.Variable pos name) = return (Variable pos name) --resolveVariable name
-    toAst (Types.Operator pos m f) = resolveFunction (m,f) >>= return . uncurry (Operator pos)
+    toAst (Types.Operator pos m f) = resolveFunction (NameError pos (funcName m f)) (m,f) >>= return . uncurry (Operator pos)
     toAst (Types.Application pos op args) = toAst op >>= \operator -> (mapM toAst args) >>= return . (Application operator pos)
     toAst (Types.Datatype pos datatype) = toAst datatype
     toAst Types.Wildcard = (return . Atom) "__wildcard__"
     toAst _ = return (Atom "asdf")
 
 --instance AST Types.Definition where
---    toAst (Types.Definition)
+--    toAst (Types.Definition pos name patternList) = mapM toAst
+    --Definition SourcePos String [([Expression], Expression, Expression, [Definition])]
+    -- Arguments: Position, FunctionName, [(Variables, Guard, Body, InlineFunctions)]
 
 --addDefinition modName (Types.Definition pos name patterns) = addFunction modName name (map addPattern patterns)
 
@@ -46,8 +50,11 @@ addVarState (Vector a) = mapM addVarState a >> return (Vector a)
 addVarState x = return x
 
 checkVarState :: ASTDatatype -> Compiler ASTDatatype
-checkVarState (Variable pos name) = elemVariable name >> return (Variable pos name)
+checkVarState (Variable pos name) = elemVariable (NameError pos name) name >> return (Variable pos name)
 checkVarState (Application op pos args) = mapM checkVarState args >> return (Application op pos args)
 checkVarState (List a) = mapM checkVarState a >> return (List a)
 checkVarState (Vector a) = mapM checkVarState a >> return (Vector a)
 checkVarState x = return x
+
+funcName "" f = f
+funcName m f = m ++ moduleSep ++ f

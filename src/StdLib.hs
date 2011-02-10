@@ -1,4 +1,4 @@
-module StdLib where
+module StdLib (builtins) where
 
 import AST
 import ASTErrors

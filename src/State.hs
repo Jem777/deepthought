@@ -1,5 +1,5 @@
 module State
-    (addModule, addFunction, resolveFunction, callFunction, toLambda, addVariable, elemVariable, transferState, newState, cleanState, importModule, setExports)
+    (addModule, addFunction, resolveFunction, addVariable, elemVariable, transferState, newState, cleanState, importModule, setExports)
     where
 
 import AST
@@ -24,11 +24,10 @@ runS a b = runStateT a b
 addModule :: String -> Module -> Compiler ()
 addModule m funMap = modify (changeTree (Map.insert m funMap))
 addFunction (m, f) lambda = modify (changeTree (Map.adjust (\funMap -> Map.insert f lambda funMap) m))
-resolveFunction = call internResolve FoobarError
-callFunction = call internLambda FoobarError
-toLambda = call internCallDirect FoobarError
---resolveVariable = call (\v -> Map.lookup v . getVariables) FoobarError
-elemVariable = call (\v -> find (==v) . getVariables) FoobarError
+resolveFunction = call internResolve
+callFunction = call internLambda
+toLambda = call internCallDirect
+elemVariable = call (\v -> find (==v) . getVariables)
 addVariable variable = modify (changeVariables ((:) variable))
 
 maybeError f = CompilerMonad . maybe (Left [f]) Right

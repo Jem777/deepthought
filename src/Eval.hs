@@ -1,8 +1,8 @@
-module Eval (eval, statelessEval, saveArgs)where
+module Eval (eval, saveArgs) where
 
 import AST
-import StdLib
 import ASTErrors
+import Misc
 
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -26,26 +26,33 @@ changeVariables f (EvalState t v) = EvalState t (f v)
 
 callFunction = call (\(m,f) -> (=<<) (Map.lookup f) . Map.lookup m . getTree) BlubbError
 resolveVariable = call (\v -> Map.lookup v . getVariables) BlubbError
+    -- both errors should not appear, otherwise there is a bug in the compiler
 addVariable key value = modify (changeVariables (Map.insert key value))
 
 maybeError f = EvalMonad . return . maybe (Left [f]) Right
 call f g a = reduceEvalMonad . gets $ maybeError g . (f a)
 
-matchingArgs args pattern
+matchingArgs pos args pattern
     | length pattern == length args = Right (zip args pattern)
-    | otherwise = Left [BlubbError]
+    | otherwise = Left [PatternException pos (show args) (show pattern)]
 
-merge :: (ASTDatatype, ASTDatatype) -> Either [RuntimeError] [(String, ASTDatatype)]
-merge (Atom "__wildcard__", _) = return []
-merge (Variable _ name, a) = return [(name, a)]
-merge (Application (Operator _ "StdLib" ":") _ args, List a)
-    | length args == 1 + length a = fmap concat (mapM merge (zip args a))
-    | length args <= length a = (fmap concat . mapM merge) ((last args, List (drop (length a - length args) a)):(zip (init args) a))
-    | otherwise = Left [BlubbError]
-merge (a, b) = if a == b then return [] else Left [BlubbError]
+merge :: Misc.SourcePos -> (ASTDatatype, ASTDatatype) -> Either [RuntimeError] [(String, ASTDatatype)]
+merge _ (Atom "__wildcard__", _) = return []
+merge _ (Variable _ name, a) = return [(name, a)]
+merge pos (Application (Operator _ "StdLib" ":") _ args, List a)
+    | length args == 1 + length a = concat <$> (mapM (merge pos) (zip args a))
+    | length args <= length a = (fmap concat . mapM (merge pos)) ((last args, List (drop (length a - length args) a)):(zip (init args) a))
+    | otherwise = Left [PatternException pos (show args) (show (List a))]
+merge pos (List a, List b)
+    | length a == length b = concat <$> mapM (merge pos) (zip a b)
+    | otherwise = Left [PatternException pos (show (List a)) (show (List b))]
+merge pos (Vector a, Vector b)
+    | length a == length b = concat <$> mapM (merge pos) (zip a b)
+    | otherwise = Left [PatternException pos (show (Vector a)) (show (Vector b))]
+merge pos (a, b) = if a == b then return [] else Left [PatternException pos (show a) (show b)]
 
-getArgs args pattern = matchingArgs args pattern >>= mapM merge >>= return . concat
-saveArgs a = (>>= mapM (uncurry addVariable)) . reduceEvalMonad . return . EvalMonad . return . getArgs a
+getArgs pos args pattern = matchingArgs pos args pattern >>= mapM (merge pos) >>= return . concat
+saveArgs pos a = mapM (uncurry addVariable) <=< reduceEvalMonad . return . EvalMonad . return . getArgs pos a
 
 instance Monad (Either a) where
     return = Right
