@@ -21,8 +21,7 @@ instance AST Types.Datatype where
     toAst (Types.Atom a) = return (Atom a)
     toAst (Types.List a) = mapM toAst a >>= return . List
     toAst (Types.Vector a) = mapM toAst a >>= return . Vector
-    toAst (Types.Lambda args body) = (\a -> Lambda . (f a)) <$> (mapM toAst args >>= mapM addVarState) <*> (toAst body >>= checkVarState)
-        where f args body pos pattern = saveArgs pos args pattern >> (eval body)
+    toAst (Types.Lambda args body) = createLambda <$> (mapM toAst args >>= mapM addVarState) <*> (toAst body >>= checkVarState)
 
 instance AST Types.Expression where
     toAst (Types.Variable pos name) = return (Variable pos name) --resolveVariable name
@@ -32,15 +31,27 @@ instance AST Types.Expression where
     toAst Types.Wildcard = (return . Atom) "__wildcard__"
     toAst _ = return (Atom "asdf")
 
---instance AST Types.Definition where
---    toAst (Types.Definition pos name patternList) = mapM toAst
-    --Definition SourcePos String [([Expression], Expression, Expression, [Definition])]
+instance AST Types.Definition where
+    toAst (Types.Definition pos name patternList) = createDefinition <$> mapM f patternList
+        where f (var, guard, body, inline) = (\a b c d -> (a,b,c,d)) <$> mapM toAst var <*> toAst guard <*> toAst body <*> mapM toAst inline
+    -- Definition SourcePos String [([Expression], Expression, Expression, [Definition])]
     -- Arguments: Position, FunctionName, [(Variables, Guard, Body, InlineFunctions)]
+
+instance AST Types.InlineFunction where
+    toAst (Types.InlineFunction pos patternList) = createDefinition <$> mapM f patternList
+        where f (var, guard, body) = (\a b c -> (a,b,c,[])) <$> mapM toAst var <*> toAst guard <*> toAst body
 
 --addDefinition modName (Types.Definition pos name patterns) = addFunction modName name (map addPattern patterns)
 
 --[([Expression], Expression, Expression, [Definition])]
 --addPattern (varList, guard, body, inlineFun)
+
+createLambda args body = createHelper args (Atom "@true") body
+createHelper args guard body = createFunction args guard body []
+createFunction args guard body inline = createDefinition [(args, guard, body, inline)]
+createDefinition function = Lambda (\pos pattern -> iterateTerms function pos pattern)
+
+seqPattern list = list
 
 addVarState :: ASTDatatype -> Compiler ASTDatatype
 addVarState (Variable pos name) = addVariable name >> return (Variable pos name)

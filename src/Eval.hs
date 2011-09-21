@@ -1,4 +1,4 @@
-module Eval (eval, saveArgs) where
+module Eval (eval, iterateTerms) where
 
 import AST
 import ASTErrors
@@ -10,6 +10,7 @@ import Control.Monad.State
 import Control.Applicative ((<$>))
 import Control.Monad
 
+eval :: ASTDatatype -> Eval ASTDatatype
 eval (Application op pos args) = statelessEval op >>= \(Lambda operator) -> mapM eval args >>= operator pos
 eval (Operator pos m f) = callFunction (m,f)
 eval (Variable pos name) = resolveVariable name
@@ -18,6 +19,8 @@ eval (Vector list) = Vector <$> mapM eval list
 eval x = goRight x
 
 statelessEval = StateT . flip (\s -> (>>= return . flip (,) s) . flip evalStateT s . eval)
+
+guardEval pos a = statelessEval a >>= \x -> if isTrue x then goRight () else goLeft [GuardMismatch pos "didnt match"]
 
 getTree (EvalState t _) = t
 getVariables (EvalState _ v) = v
@@ -53,6 +56,26 @@ merge pos (a, b) = if a == b then return [] else Left [PatternException pos (sho
 
 getArgs pos args pattern = matchingArgs pos args pattern >>= mapM (merge pos) >>= return . concat
 saveArgs pos a = mapM (uncurry addVariable) <=< reduceEvalMonad . return . EvalMonad . return . getArgs pos a
+
+-- evaluate a function with multiple terms
+iterateTerms [] _ _ = goLeft [BlubbError]
+iterateTerms ((args, guard, body, inline):terms) pos pattern = stepMonad (saveArgs pos args pattern >> guardEval pos guard)
+    >>= \x -> if x then evalThis else evalOthers
+    where
+        evalOthers = iterateTerms terms pos pattern
+        evalThis = eval body
+
+stepMonad :: StateT EvalState EvalMonad a -> StateT EvalState EvalMonad Bool
+stepMonad = StateT . (\g s -> (fmap (\y -> (y,s)) . openMonad) (g s)) . runStateT
+    where
+        openMonad = EvalMonad . (>>= stepMonad2) . runEvalMonad
+        stepMonad2 (Left [error]) = if criticalError error then return (Left [error]) else return (Right False)
+        stepMonad2 (Right _) = return (Right True)
+
+criticalError (GuardMismatch _ _) = False
+criticalError (PatternException _ _ _) = False
+criticalError _ = True
+
 
 instance Monad (Either a) where
     return = Right

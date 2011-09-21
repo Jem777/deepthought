@@ -71,6 +71,16 @@ printStr pos x = goLeft [functionError pos "printStr" 1 x]
 string _ [x] = (goRight . String . show) x
 string pos x = goLeft [functionError pos "str" 1 x]
 
+bool _ [String ""] = goRight (Atom "@false")
+bool _ [Number 0] = goRight (Atom "@false")
+bool _ [Float 0.0] = goRight (Atom "@false")
+bool _ [List []] = goRight (Atom "@false")
+bool _ [Vector []] = goRight (Atom "@false")
+bool _ [Atom "@false"] = goRight (Atom "@false")
+bool _ [_] = goRight (Atom "@true")
+bool pos x = goLeft [functionError pos "bool" 1 x]
+
+
 builtins =
     [
     ("+", add),

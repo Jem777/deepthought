@@ -7,6 +7,7 @@ data RuntimeError =
     TooMuchArgs SourcePos String Integer Integer
     | TypeError SourcePos String String
     | PatternException SourcePos String String
+    | GuardMismatch SourcePos String
     | BlubbError
     | CompilerError CompileError
     deriving (Show)

@@ -91,3 +91,10 @@ instance Show ASTDatatype where
     show (Lambda _) = "<Lambda>"
     show (Variable pos string) = string
     show (Application op _ args) = "Application " ++ show op ++ " to " ++ (concat . map show) args
+
+isTrue (List []) = False
+isTrue (Vector []) = False
+isTrue (Number 0) = False
+isTrue (Float 0) = False
+isTrue (String "") = False
+isTrue _ = True

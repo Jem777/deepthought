@@ -40,11 +40,14 @@ data Expression = -- everything that evals to an datatype
     deriving (Show)
 
 data Definition =
-    Definition SourcePos String [([Expression], Expression, Expression, [Definition])]
+    Definition SourcePos String [([Expression], Expression, Expression, [InlineFunction])]
     -- Arguments: Position, FunctionName, [(Variables, Guard, Body, InlineFunctions)]
-    | InlineFunction SourcePos String [([Expression], Expression, Expression)]
-    -- Arguments: Position, FunctionName, [(Variables, Guard, Body)]
     deriving (Show)
+data InlineFunction =
+    InlineFunction SourcePos [([Expression], Expression, Expression)]
+    -- Arguments: Position, [(Variables, Guard, Body)]
+    deriving (Show)
+
 
 data TreeObject = Expression (Integer, Integer) String Expression
 
@@ -95,9 +98,7 @@ instance Object Expression where
 
 instance Object Definition where
     position (Definition a _ _) = a
-    position (InlineFunction a _ _) = a
     name (Definition _ a _) = a
-    name (InlineFunction _ a _) = a
 
 -- a lot of trivial functions for using the types
 

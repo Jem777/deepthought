@@ -8,7 +8,7 @@ type SourcePos = P.SourcePos
 
 moduleSep = "::"
 testEmptyPos = P.newPos "" 0 0
-
+wildcard = "__wildcard__"
 {-
 eitherRight f = either Left (Right . f) 
 
